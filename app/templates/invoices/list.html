@@ -3,9 +3,17 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h2><i class="bi bi-receipt me-2"></i>قائمة الفواتير</h2>
-  <a href="{{ url_for('invoices.new') }}" class="btn btn-info">
-    <i class="bi bi-plus-circle me-1"></i>فاتورة جديدة
-  </a>
+  <div class="d-flex gap-2">
+    <!-- Hidden: New Invoice button removed from invoice list page -->
+    <!-- <a href="{{ url_for('invoices.new') }}" class="btn btn-info">
+      <i class="bi bi-plus-circle me-1"></i>فاتورة جديدة
+    </a> -->
+    {% if session.get('role') == 'manager' %}
+    <a href="{{ url_for('invoices.export_page') }}" class="btn btn-success">
+      <i class="bi bi-download me-1"></i>تصدير البيانات
+    </a>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Search Form -->

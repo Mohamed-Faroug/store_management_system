@@ -53,6 +53,26 @@
             color: #666;
         }
         
+        .company-info {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .company-info h3 {
+            color: #000;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .company-info p {
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+        
         .invoice-info {
             display: flex;
             justify-content: space-between;
@@ -170,6 +190,14 @@
             <p>تاريخ: {{ invoice['created_at'] }}</p>
         </div>
         
+        <!-- Company Info -->
+        <div class="company-info">
+            <h3>مخزن الزينة - إدارة المخزون</h3>
+            <p><strong>العنوان:</strong> شارع الملك فيصل، الرياض، المملكة العربية السعودية</p>
+            <p><strong>الهاتف:</strong> +966 50 123 4567 | <strong>البريد الإلكتروني:</strong> info@zina-store.com</p>
+            <p><strong>الرقم الضريبي:</strong> 123456789012345 | <strong>السجل التجاري:</strong> 1010123456</p>
+        </div>
+        
         <!-- Invoice Info -->
         <div class="invoice-info">
             <div class="left">
@@ -237,6 +265,19 @@
             <p>شكراً لتعاملكم معنا</p>
             <p>تم تطوير هذا النظام بواسطة: محمد فاروق</p>
             <p>جميع الحقوق محفوظة © 2025</p>
+        </div>
+    </div>
+    
+    <!-- Print Controls -->
+    <div class="print-controls no-print" style="position: fixed; top: 20px; left: 20px; z-index: 1000; background: white; padding: 15px; border: 1px solid #ccc;">
+        <h4 style="margin-bottom: 15px;">تحكم في الطباعة</h4>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" style="background: #007bff; color: white; border: none; padding: 8px 16px; cursor: pointer;">
+                طباعة الفاتورة
+            </button>
+            <button onclick="window.close()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; cursor: pointer;">
+                إغلاق
+            </button>
         </div>
     </div>
     

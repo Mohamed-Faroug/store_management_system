@@ -12,7 +12,10 @@ bp = Blueprint('items', __name__)
 @bp.route('/items')
 @login_required()
 def list():
-    """قائمة الأصناف"""
+    """قائمة الأصناف - للمدير فقط"""
+    if session.get('role') != 'manager':
+        flash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger')
+        return redirect(url_for('main.index'))
     db = get_db()
     search = request.args.get('search', '').strip()
     category_id = request.args.get('category', '')
@@ -44,7 +47,10 @@ def list():
 @bp.route('/items/new', methods=['GET', 'POST'])
 @login_required()
 def new():
-    """إضافة صنف جديد"""
+    """إضافة صنف جديد - للمدير فقط"""
+    if session.get('role') != 'manager':
+        flash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger')
+        return redirect(url_for('main.index'))
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         category_id = request.form.get('category_id', '')
@@ -78,7 +84,10 @@ def new():
 @bp.route('/items/<int:item_id>/edit', methods=['GET', 'POST'])
 @login_required()
 def edit(item_id):
-    """تعديل صنف"""
+    """تعديل صنف - للمدير فقط"""
+    if session.get('role') != 'manager':
+        flash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger')
+        return redirect(url_for('main.index'))
     db = get_db()
     item = db.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     

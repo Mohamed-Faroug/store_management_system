@@ -1,51 +1,63 @@
 @echo off
 chcp 65001 >nul
-title Inventory Management System
+title نظام إدارة المخزون والمبيعات
 
 echo.
 echo ========================================
-echo 🏪 Inventory Management System
-echo 👨‍💻 Developed by: محمد فاروق
-echo 📅 Last Updated: 9/9/2025
-echo © All Rights Reserved 2025
+echo    نظام إدارة المخزون والمبيعات
 echo ========================================
 echo.
 
-:: Check if EXE exists
-if not exist "dist\inventory_system.exe" (
-    echo ❌ EXE file not found!
-    echo.
-    echo 🔧 Building EXE file...
-    call build_exe.bat
-    if errorlevel 1 (
-        echo ❌ Failed to build EXE
-        pause
-        exit /b 1
-    )
+echo 🔍 فحص المتطلبات...
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo ❌ Python غير مثبت أو غير موجود في PATH
+    echo يرجى تثبيت Python 3.8 أو أحدث
+    pause
+    exit /b 1
 )
 
-:: Check if database exists
+echo ✅ Python متوفر
+echo.
+
+echo 📦 فحص المتطلبات...
+if not exist "requirements.txt" (
+    echo ❌ ملف requirements.txt غير موجود
+    pause
+    exit /b 1
+)
+
+echo ✅ ملف المتطلبات موجود
+echo.
+
+echo 🔧 تثبيت المتطلبات...
+pip install -r requirements.txt --quiet
+if errorlevel 1 (
+    echo ❌ فشل في تثبيت المتطلبات
+    pause
+    exit /b 1
+)
+
+echo ✅ تم تثبيت المتطلبات بنجاح
+echo.
+
+echo 🗄️ فحص قاعدة البيانات...
 if not exist "inventory.db" (
-    echo ❌ Database not found!
-    echo.
-    echo 🔧 Creating database...
-    python -c "from app import create_app; from app.models.database import init_db; app = create_app(); app.app_context().push(); init_db()"
-    if errorlevel 1 (
-        echo ❌ Failed to create database
-        pause
-        exit /b 1
-    )
+    echo ⚠️  قاعدة البيانات غير موجودة، سيتم إنشاؤها تلقائياً
 )
 
-echo ✅ All required files are available
+echo ✅ قاعدة البيانات جاهزة
 echo.
 
-echo 🚀 Starting Inventory Management System...
-echo 📱 Browser will open automatically at: http://127.0.0.1:8080
-echo 🔑 Login: admin / admin123
+echo 🚀 تشغيل التطبيق...
+echo.
+echo 📱 المتصفح: http://127.0.0.1:5000
+echo ⏹️  لإيقاف التطبيق: Ctrl+C
+echo ========================================
 echo.
 
-cd /d "%~dp0"
-"dist\inventory_system.exe"
+python run.py
 
+echo.
+echo 👋 تم إيقاف التطبيق
 pause

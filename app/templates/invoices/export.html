@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-download me-2"></i>تصدير بيانات الفواتير</h2>
+                <a href="{{ url_for('invoices.list') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة للقائمة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calendar-range me-2"></i>تصدير حسب التاريخ</h5>
+                </div>
+                <div class="card-body">
+                    <form id="dateExportForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">من تاريخ</label>
+                            <input type="date" class="form-control" id="startDate" name="start_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">إلى تاريخ</label>
+                            <input type="date" class="form-control" id="endDate" name="end_date">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-download me-1"></i>تصدير البيانات
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>تصدير جميع البيانات</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">تصدير جميع الفواتير الموجودة في النظام</p>
+                    <button onclick="exportAllData()" class="btn btn-success">
+                        <i class="bi bi-download me-1"></i>تصدير الكل
+                    </button>
+                    <button onclick="testAPI()" class="btn btn-info">
+                        <i class="bi bi-gear me-1"></i>اختبار API
+                    </button>
+                    <button onclick="checkAPIStatus()" class="btn btn-warning">
+                        <i class="bi bi-info-circle me-1"></i>حالة API
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Statistics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>إحصائيات التصدير</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="exportStats">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-primary" id="totalInvoices">-</h3>
+                                <p class="text-muted">إجمالي الفواتير</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-success" id="totalAmount">-</h3>
+                                <p class="text-muted">إجمالي المبيعات</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-info" id="totalItems">-</h3>
+                                <p class="text-muted">إجمالي الأصناف</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h3 class="text-warning" id="lastExport">-</h3>
+                                <p class="text-muted">آخر تصدير</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export History -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>سجل التصدير</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>نوع التصدير</th>
+                                    <th>التاريخ</th>
+                                    <th>عدد الفواتير</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exportHistory">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">لا توجد عمليات تصدير سابقة</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load export statistics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadExportStats();
+});
+
+// Load export statistics
+async function loadExportStats() {
+    try {
+        const response = await fetch('/invoices/api/invoices/export');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        document.getElementById('totalInvoices').textContent = data.total_count;
+        
+        // Calculate total amount
+        const totalAmount = data.invoices.reduce((sum, invoice) => sum + parseFloat(invoice.final_amount), 0);
+        document.getElementById('totalAmount').textContent = totalAmount.toFixed(2) + ' ج.س';
+        
+        // Calculate total items
+        const totalItems = data.invoices.reduce((sum, invoice) => sum + invoice.items.length, 0);
+        document.getElementById('totalItems').textContent = totalItems;
+        
+        document.getElementById('lastExport').textContent = new Date().toLocaleDateString('ar-SA');
+        
+    } catch (error) {
+        console.error('Error loading export stats:', error);
+        document.getElementById('totalInvoices').textContent = 'خطأ';
+        document.getElementById('totalAmount').textContent = 'خطأ';
+        document.getElementById('totalItems').textContent = 'خطأ';
+        document.getElementById('lastExport').textContent = 'خطأ';
+    }
+}
+
+// Export by date range
+document.getElementById('dateExportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('يرجى اختيار تاريخ البداية والنهاية');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/invoices/api/invoices/export?start_date=${startDate}&end_date=${endDate}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Download the data
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoices_${startDate}_to_${endDate}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Add to export history
+        addToExportHistory('تصدير حسب التاريخ', `${startDate} - ${endDate}`, data.total_count, 'مكتمل');
+        
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        alert('خطأ في تصدير البيانات: ' + error.message);
+    }
+});
+
+// Export all data
+async function exportAllData() {
+    try {
+        const response = await fetch('/invoices/api/invoices/export');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Download the data
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `all_invoices_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Add to export history
+        addToExportHistory('تصدير الكل', 'جميع الفواتير', data.total_count, 'مكتمل');
+        
+    } catch (error) {
+        console.error('Error exporting all data:', error);
+        alert('خطأ في تصدير البيانات: ' + error.message);
+    }
+}
+
+// Add to export history
+function addToExportHistory(type, date, count, status) {
+    const tbody = document.getElementById('exportHistory');
+    
+    // Remove "no data" row if exists
+    const noDataRow = tbody.querySelector('tr td[colspan="5"]');
+    if (noDataRow) {
+        noDataRow.parentElement.remove();
+    }
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${type}</td>
+        <td>${date}</td>
+        <td>${count}</td>
+        <td><span class="badge bg-success">${status}</span></td>
+        <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="viewExportDetails('${type}', '${date}')">
+                <i class="bi bi-eye"></i> عرض
+            </button>
+        </td>
+    `;
+    
+    tbody.insertBefore(row, tbody.firstChild);
+}
+
+// View export details
+function viewExportDetails(type, date) {
+    alert(`تفاصيل التصدير:\nالنوع: ${type}\nالتاريخ: ${date}`);
+}
+
+// Test API
+async function testAPI() {
+    try {
+        const response = await fetch('/invoices/api/test');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+        
+        const data = await response.json();
+        alert(`API يعمل بشكل صحيح!\nالحالة: ${data.status}\nالرسالة: ${data.message}`);
+        
+    } catch (error) {
+        console.error('Error testing API:', error);
+        alert('خطأ في اختبار API: ' + error.message);
+    }
+}
+
+// Check API Status
+async function checkAPIStatus() {
+    try {
+        const response = await fetch('/invoices/api/status');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+        
+        const data = await response.json();
+        alert(`حالة API:\nالحالة: ${data.status}\nالرسالة: ${data.message}\nالإصدار: ${data.version}\n\nEndpoints المتاحة:\n${data.endpoints.join('\n')}`);
+        
+    } catch (error) {
+        console.error('Error checking API status:', error);
+        alert('خطأ في فحص حالة API: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

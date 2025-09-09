@@ -4,6 +4,7 @@
 """
 
 import sqlite3
+import os
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import g
@@ -12,8 +13,15 @@ def get_db():
     """الحصول على اتصال قاعدة البيانات"""
     from flask import current_app
     if 'db' not in g:
-        g.db = sqlite3.connect(current_app.config['DATABASE'])
-        g.db.row_factory = sqlite3.Row
+        try:
+            database_path = current_app.config['DATABASE']
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(database_path), exist_ok=True)
+            g.db = sqlite3.connect(database_path)
+            g.db.row_factory = sqlite3.Row
+        except Exception as e:
+            print(f"Database connection error: {e}")
+            raise
     return g.db
 
 def close_db(exception=None):
@@ -25,8 +33,12 @@ def close_db(exception=None):
 def init_db():
     """تهيئة قاعدة البيانات"""
     from flask import current_app
-    db = get_db()
-    db.executescript(SCHEMA_SQL)
+    try:
+        db = get_db()
+        db.executescript(SCHEMA_SQL)
+    except Exception as e:
+        print(f"Database schema creation warning: {e}")
+        # Continue with other initialization
     
     # Database migration - add new columns if they don't exist
     try:

@@ -34,12 +34,14 @@
             <a class="nav-link" href="{{ url_for('sales.new') }}">
               <i class="bi bi-cart-plus me-1"></i>بيع سريع
             </a>
-            <a class="nav-link" href="{{ url_for('invoices.new') }}">
-              <i class="bi bi-receipt me-1"></i>فاتورة جديدة
-            </a>
+            <!-- خيارات الفواتير للكاشير والمدير -->
             <a class="nav-link" href="{{ url_for('invoices.list') }}">
               <i class="bi bi-list-ul me-1"></i>قائمة الفواتير
             </a>
+            <!-- Hidden: New Invoice button removed from main navigation -->
+            <!-- <a class="nav-link" href="{{ url_for('invoices.new') }}">
+              <i class="bi bi-receipt me-1"></i>فاتورة جديدة
+            </a> -->
             {% if session.get('role') == 'manager' %}
             <a class="nav-link" href="{{ url_for('purchases.new') }}">
               <i class="bi bi-cart-dash me-1"></i>شراء جديد
@@ -76,13 +78,24 @@
       <div class="main-container fade-in">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            {% for cat, msg in messages %}
-              <div class="alert alert-{{cat}} alert-dismissible fade show" role="alert">
-                <i class="bi bi-{{ 'check-circle' if cat=='success' else 'exclamation-triangle' if cat=='warning' else 'info-circle' if cat=='info' else 'x-circle' }} me-2"></i>
-                {{ msg }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            {% endfor %}
+            <div class="notifications-container">
+              {% for cat, msg in messages %}
+                <div class="alert alert-{{cat}} alert-dismissible fade show" role="alert">
+                  <div class="alert-content">
+                    <div class="alert-icon">
+                      <i class="bi bi-{{ 'check-circle-fill' if cat=='success' else 'exclamation-triangle-fill' if cat=='warning' else 'info-circle-fill' if cat=='info' else 'x-circle-fill' if cat=='danger' else 'bell-fill' }}"></i>
+                    </div>
+                    <div class="alert-message">
+                      <strong>{{ 'نجح!' if cat=='success' else 'تحذير!' if cat=='warning' else 'معلومة!' if cat=='info' else 'خطأ!' if cat=='danger' else 'تنبيه!' }}</strong>
+                      <p>{{ msg }}</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
           {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}

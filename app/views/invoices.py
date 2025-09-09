@@ -12,7 +12,8 @@ bp = Blueprint('invoices', __name__)
 @bp.route('/invoices')
 @login_required()
 def list():
-    """قائمة الفواتير"""
+    """قائمة الفواتير - للكاشير والمدير"""
+    
     db = get_db()
     
     # Get search parameters
@@ -55,7 +56,7 @@ def list():
 @bp.route('/invoices/new', methods=['GET', 'POST'])
 @login_required()
 def new():
-    """فاتورة جديدة"""
+    """فاتورة جديدة - للكاشير والمدير"""
     if request.method == 'POST':
         customer_name = request.form.get('customer_name', '').strip()
         customer_phone = request.form.get('customer_phone', '').strip()
@@ -125,7 +126,7 @@ def new():
 @bp.route('/invoices/<int:invoice_id>')
 @login_required()
 def view(invoice_id):
-    """عرض تفاصيل الفاتورة"""
+    """عرض تفاصيل الفاتورة - للكاشير والمدير"""
     db = get_db()
     invoice = db.execute('''
         SELECT i.*, u.username as created_by_name
@@ -158,7 +159,7 @@ def view(invoice_id):
 @bp.route('/invoices/<int:invoice_id>/print')
 @login_required()
 def print_invoice(invoice_id):
-    """طباعة الفاتورة A4"""
+    """طباعة الفاتورة A4 - للكاشير والمدير"""
     db = get_db()
     invoice = db.execute('''
         SELECT i.*, u.username as created_by_name
@@ -184,7 +185,7 @@ def print_invoice(invoice_id):
 @bp.route('/invoices/<int:invoice_id>/print-58mm')
 @login_required()
 def print_invoice_58mm(invoice_id):
-    """طباعة الفاتورة 58mm"""
+    """طباعة الفاتورة 58mm - للكاشير والمدير"""
     db = get_db()
     invoice = db.execute('''
         SELECT i.*, u.username as created_by_name
@@ -206,3 +207,153 @@ def print_invoice_58mm(invoice_id):
     ''', (invoice_id,)).fetchall()
     
     return render_template('invoices/print_58mm.html', invoice=invoice, items=items)
+
+@bp.route('/api/invoices/<int:invoice_id>/data')
+@login_required()
+def get_invoice_data(invoice_id):
+    """جلب بيانات الفاتورة كـ JSON - للمدير فقط"""
+    if session.get('role') != 'manager':
+        from flask import jsonify
+        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    from flask import jsonify
+    
+    try:
+        db = get_db()
+        invoice = db.execute('''
+            SELECT i.*, u.username as created_by_name
+            FROM invoices i
+            LEFT JOIN users u ON u.id = i.created_by
+            WHERE i.id = ?
+        ''', (invoice_id,)).fetchone()
+        
+        if not invoice:
+            return jsonify({'error': 'الفاتورة غير موجودة'}), 404
+        
+        items = db.execute('''
+            SELECT s.*, i.name as item_name
+            FROM sales s
+            JOIN items i ON i.id = s.item_id
+            WHERE s.invoice_id = ?
+            ORDER BY s.id
+        ''', (invoice_id,)).fetchall()
+        
+        # Convert to dictionary
+        invoice_data = dict(invoice)
+        items_data = [dict(item) for item in items]
+        
+        return jsonify({
+            'invoice': invoice_data,
+            'items': items_data,
+            'summary': {
+                'total_items': len(items_data),
+                'total_amount': float(invoice_data['total_amount']),
+                'final_amount': float(invoice_data['final_amount']),
+                'discount_amount': float(invoice_data['discount_amount']),
+                'tax_amount': float(invoice_data['tax_amount'])
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': f'خطأ في جلب البيانات: {str(e)}'}), 500
+
+@bp.route('/api/invoices/export')
+@login_required()
+def export_invoices():
+    """تصدير جميع الفواتير كـ JSON - للمدير فقط"""
+    if session.get('role') != 'manager':
+        from flask import jsonify
+        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    from flask import jsonify
+    
+    try:
+        db = get_db()
+        
+        # Get date range from query parameters
+        start_date = request.args.get('start_date', '')
+        end_date = request.args.get('end_date', '')
+        
+        query = '''
+            SELECT i.*, u.username as created_by_name
+            FROM invoices i
+            LEFT JOIN users u ON u.id = i.created_by
+            WHERE 1=1
+        '''
+        params = []
+        
+        if start_date:
+            query += ' AND DATE(i.created_at) >= ?'
+            params.append(start_date)
+        
+        if end_date:
+            query += ' AND DATE(i.created_at) <= ?'
+            params.append(end_date)
+        
+        query += ' ORDER BY i.created_at DESC'
+        
+        invoices = db.execute(query, params).fetchall()
+        
+        # Convert to list of dictionaries
+        invoices_data = []
+        for invoice in invoices:
+            invoice_dict = dict(invoice)
+            
+            # Get items for each invoice
+            items = db.execute('''
+                SELECT s.*, i.name as item_name
+                FROM sales s
+                JOIN items i ON i.id = s.item_id
+                WHERE s.invoice_id = ?
+                ORDER BY s.id
+            ''', (invoice['id'],)).fetchall()
+            
+            invoice_dict['items'] = [dict(item) for item in items]
+            invoices_data.append(invoice_dict)
+        
+        return jsonify({
+            'invoices': invoices_data,
+            'total_count': len(invoices_data),
+            'export_date': now_str(),
+            'filters': {
+                'start_date': start_date,
+                'end_date': end_date
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': f'خطأ في تصدير البيانات: {str(e)}'}), 500
+
+@bp.route('/invoices/export-page')
+@login_required()
+def export_page():
+    """صفحة تصدير البيانات - للمدير فقط"""
+    if session.get('role') != 'manager':
+        flash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger')
+        return redirect(url_for('main.index'))
+    return render_template('invoices/export.html')
+
+@bp.route('/api/test')
+@login_required()
+def test_api():
+    """اختبار API - للمدير فقط"""
+    if session.get('role') != 'manager':
+        from flask import jsonify
+        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    from flask import jsonify
+    return jsonify({'status': 'success', 'message': 'API يعمل بشكل صحيح'})
+
+@bp.route('/api/status')
+@login_required()
+def api_status():
+    """حالة API - للمدير فقط"""
+    if session.get('role') != 'manager':
+        from flask import jsonify
+        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    from flask import jsonify
+    return jsonify({
+        'status': 'active',
+        'message': 'API نشط ويعمل بشكل صحيح',
+        'version': '1.0.0',
+        'endpoints': [
+            '/invoices/api/invoices/export',
+            '/invoices/api/invoices/<id>/data',
+            '/invoices/api/test'
+        ]
+    })

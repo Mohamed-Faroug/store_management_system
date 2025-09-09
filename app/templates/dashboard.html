@@ -19,24 +19,33 @@
         </div>
     </div>
 
+    <!-- Welcome Message for Cashier -->
+    {% if session.get('role') == 'clerk' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-person-check me-2"></i>
+                <strong>مرحباً {{ session.get('username') }}!</strong> 
+                مرحباً بك في نظام المبيعات. يمكنك استخدام نقطة البيع لإتمام المبيعات وعرض الفواتير.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <!-- إجمالي المبيعات اليوم -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-currency-dollar me-2"></i>مبيعات اليوم
+                    </h6>
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                مبيعات اليوم
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-sales">
-                                {{ data.today_sales or 0 }} ج.س
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="h4 mb-0 text-primary font-weight-bold" id="today-sales">
+                        {{ "%.2f"|format(data.today_sales|default(0)) }} ج.س
                     </div>
                 </div>
             </div>
@@ -44,20 +53,15 @@
 
         <!-- إجمالي المنتجات -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-box me-2"></i>إجمالي المنتجات
+                    </h6>
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                إجمالي المنتجات
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-items">
-                                {{ data.total_items or 0 }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-box fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="h4 mb-0 text-success font-weight-bold" id="total-items">
+                        {{ data.total_products or 0 }}
                     </div>
                 </div>
             </div>
@@ -65,20 +69,15 @@
 
         <!-- المنتجات منخفضة المخزون -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>منخفضة المخزون
+                    </h6>
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                منخفضة المخزون
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-stock">
-                                {{ data.low_stock_items or 0 }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="h4 mb-0 text-warning font-weight-bold" id="low-stock">
+                        {{ data.low_stock or 0 }}
                     </div>
                 </div>
             </div>
@@ -86,20 +85,15 @@
 
         <!-- إجمالي الفواتير -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+            <div class="card shadow h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>فواتير اليوم
+                    </h6>
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                فواتير اليوم
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-invoices">
-                                {{ data.today_invoices or 0 }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="bi bi-receipt fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="h4 mb-0 text-info font-weight-bold" id="today-invoices">
+                        {{ data.today_invoices or 0 }}
                     </div>
                 </div>
             </div>
@@ -110,33 +104,55 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="bi bi-lightning me-2"></i>إجراءات سريعة
-                    </h6>
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>الإجراءات السريعة
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('sales.new') }}" class="btn btn-primary btn-block">
-                                <i class="bi bi-cart-plus me-2"></i>نقطة البيع
+                            <a href="{{ url_for('sales.new') }}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-cart-plus me-2"></i>
+                                <span>نقطة البيع</span>
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('items.new') }}" class="btn btn-success btn-block">
-                                <i class="bi bi-plus-circle me-2"></i>إضافة منتج
+                            <a href="{{ url_for('invoices.list') }}" class="btn btn-info btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-list-ul me-2"></i>
+                                <span>قائمة الفواتير</span>
+                            </a>
+                        </div>
+                        <!-- Hidden: New Invoice button removed from dashboard -->
+                        <!-- <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('invoices.new') }}" class="btn btn-warning btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-receipt me-2"></i>
+                                <span>فاتورة جديدة</span>
+                            </a>
+                        </div> -->
+                        {% if session.get('role') == 'manager' %}
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('items.new') }}" class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                <span>إضافة منتج</span>
                             </a>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('invoices.list') }}" class="btn btn-info btn-block">
-                                <i class="bi bi-list-ul me-2"></i>قائمة الفواتير
+                            <a href="{{ url_for('reports.index') }}" class="btn btn-warning btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-graph-up me-2"></i>
+                                <span>التقارير</span>
                             </a>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <a href="{{ url_for('reports.index') }}" class="btn btn-warning btn-block">
-                                <i class="bi bi-graph-up me-2"></i>التقارير
-                            </a>
+                        {% else %}
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-info text-center h-100 d-flex align-items-center justify-content-center">
+                                <div>
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>مرحباً بك في نظام المبيعات</strong>
+                                </div>
+                            </div>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -148,43 +164,11 @@
         <!-- المبيعات الأخيرة -->
         <div class="col-lg-6 mb-4">
             <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">
+                <div class="card-header bg-primary text-white d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">
                         <i class="bi bi-clock-history me-2"></i>المبيعات الأخيرة
                     </h6>
-                    <a href="{{ url_for('sales.list') }}" class="btn btn-sm btn-primary">عرض الكل</a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>الوقت</th>
-                                    <th>المبلغ</th>
-                                    <th>العميل</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recent-sales">
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted">
-                                        <i class="bi bi-hourglass-split me-2"></i>جاري التحميل...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- المنتجات منخفضة المخزون -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-warning">
-                        <i class="bi bi-exclamation-triangle me-2"></i>منخفضة المخزون
-                    </h6>
-                    <a href="{{ url_for('stock.alerts') }}" class="btn btn-sm btn-warning">عرض الكل</a>
+                    <a href="{{ url_for('sales.list') }}" class="btn btn-sm btn-light">عرض الكل</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -192,16 +176,66 @@
                             <thead>
                                 <tr>
                                     <th>المنتج</th>
-                                    <th>المخزون</th>
-                                    <th>الحد الأدنى</th>
+                                    <th>الكمية</th>
+                                    <th>المبلغ</th>
+                                    <th>الوقت</th>
                                 </tr>
                             </thead>
-                            <tbody id="low-stock-items">
+                            <tbody>
+                                {% for sale in data.recent_sales %}
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">
-                                        <i class="bi bi-hourglass-split me-2"></i>جاري التحميل...
+                                    <td>{{ sale.name }}</td>
+                                    <td>{{ sale.quantity }}</td>
+                                    <td>{{ "%.2f"|format(sale.total_price) }} ج.س</td>
+                                    <td>{{ sale.created_at.split(' ')[1][:5] if ' ' in sale.created_at else sale.created_at }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="bi bi-inbox me-2"></i>لا توجد مبيعات
                                     </td>
                                 </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- أكثر المنتجات مبيعاً -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-trophy me-2"></i>أكثر المنتجات مبيعاً
+                    </h6>
+                    <span class="badge bg-light text-success">آخر 7 أيام</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>الكمية المباعة</th>
+                                    <th>الإيراد</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in data.top_selling_items %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td><span class="badge bg-primary">{{ item.total_sold }}</span></td>
+                                    <td>{{ "%.2f"|format(item.total_revenue) }} ج.س</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="bi bi-inbox me-2"></i>لا توجد بيانات
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -209,6 +243,118 @@
             </div>
         </div>
     </div>
+
+    <!-- الفواتير الأخيرة -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-receipt me-2"></i>الفواتير الأخيرة
+                    </h6>
+                    <a href="{{ url_for('invoices.list') }}" class="btn btn-sm btn-light">عرض الكل</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>العميل</th>
+                                    <th>المبلغ الإجمالي</th>
+                                    <th>تاريخ الإنشاء</th>
+                                    <th>أنشأ بواسطة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in data.recent_invoices %}
+                                <tr>
+                                    <td><a href="{{ url_for('invoices.view', invoice_id=invoice.id) }}" class="text-decoration-none">#{{ invoice.id }}</a></td>
+                                    <td>{{ invoice.customer_name or 'عميل نقدي' }}</td>
+                                    <td>{{ "%.2f"|format(invoice.total_amount) }} ج.س</td>
+                                    <td>{{ invoice.created_at.split(' ')[0] + ' ' + invoice.created_at.split(' ')[1][:5] if ' ' in invoice.created_at else invoice.created_at }}</td>
+                                    <td>{{ invoice.created_by or 'نظام' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="bi bi-inbox me-2"></i>لا توجد فواتير
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- العمليات الإضافية -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>العمليات الإضافية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-info btn-lg w-100 d-flex align-items-center justify-content-center" onclick="refreshDashboard()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                <span>تحديث البيانات</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-warning btn-lg w-100 d-flex align-items-center justify-content-center" onclick="exportTodayData()">
+                                <i class="bi bi-download me-2"></i>
+                                <span>تصدير اليوم</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center" onclick="backupData()">
+                                <i class="bi bi-shield-check me-2"></i>
+                                <span>نسخ احتياطي</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-secondary btn-lg w-100 d-flex align-items-center justify-content-center" onclick="clearCache()">
+                                <i class="bi bi-trash me-2"></i>
+                                <span>مسح الذاكرة</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center" onclick="showSystemInfo()">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span>معلومات النظام</span>
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-primary btn-lg w-100 d-flex align-items-center justify-content-center" onclick="showHelp()">
+                                <i class="bi bi-question-circle me-2"></i>
+                                <span>المساعدة</span>
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="alert alert-info text-center mb-0 h-100 d-flex align-items-center justify-content-center">
+                                <div>
+                                    <i class="bi bi-lightbulb me-2"></i>
+                                    <strong>نصيحة:</strong> استخدم هذه الأدوات لإدارة النظام وتحسين الأداء
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Loading Overlay -->

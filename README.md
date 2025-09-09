@@ -1,174 +1,286 @@
-# 🏪 نظام إدارة المخزون - مخزن الزينة
+# 🏪 Inventory Management System
 
-نظام إدارة مخزون متكامل ومتطور لإدارة المنتجات والمبيعات والمشتريات مع واجهة POS متقدمة.
+A comprehensive inventory and sales management system with advanced POS capabilities and professional invoicing system.
 
-## ✨ المميزات الرئيسية
+## ✨ Key Features
 
-### 🛒 نظام POS متقدم
-- واجهة 3x3 للمنتجات
-- إضافة المنتجات للسلة
-- حساب الخصم والضريبة
-- طباعة الفواتير (A4 و 58mm)
+### 🛒 Point of Sale (POS)
+- **User-friendly interface** with 3×3 product layout
+- **Smart shopping cart** with quantity control and deletion
+- **Automatic calculation** of taxes and discounts
+- **Quick search** by name or code
+- **Category filtering** for easy navigation
 
-### 📦 إدارة المخزون
-- إدارة المنتجات والفئات
-- تتبع الكميات والحد الأدنى
-- تنبيهات المخزون المنخفض
-- تعديل المخزون
+### 📊 Dashboard
+- **Comprehensive statistics** for sales and inventory
+- **Daily sales** with real-time updates
+- **Best-selling products** with performance analysis
+- **Low stock alerts** for supply control
+- **Recent invoices** with complete details
 
-### 💰 إدارة المبيعات
-- قائمة المبيعات
-- طباعة الفواتير
-- البحث في الفواتير
-- إحصائيات المبيعات
+### 📋 Inventory Management
+- **Add and edit products** with images and descriptions
+- **Product categorization** in organized categories
+- **Inventory tracking** with reorder levels
+- **Purchase recording** with supplier details
+- **Manual inventory adjustment** when needed
 
-### 📊 التقارير الشاملة
-- تقارير يومية وشهرية وسنوية
-- تقارير المخزون
-- إحصائيات المبيعات
-- تقارير المنتجات
+### 🧾 Invoicing System
+- **Professional invoice creation** with customer details
+- **Multiple print formats** (A4 and 58mm)
+- **Data export** in various formats
+- **Sales tracking** with detailed reports
+- **Automatic backups** of data
 
-### 👥 إدارة المستخدمين
-- نظام صلاحيات متقدم
-- أدوار مختلفة (مدير، كاشير)
-- إدارة كلمات المرور
+### 👥 User Management
+- **Advanced role system** (Admin and Cashier)
+- **Specific permissions** for each role
+- **Secure login** with data protection
+- **User management** with add and edit capabilities
 
-## 🚀 التثبيت والتشغيل
+## 🚀 Installation and Setup
 
-### المتطلبات
-- Python 3.8 أو أحدث
-- Windows 10/11
+### Requirements
+- Python 3.8 or higher
+- SQLite (included with Python)
+- Modern web browser
 
-### التثبيت السريع
+### Quick Installation
+
+1. **Clone the project**
 ```bash
-# 1. تثبيت المتطلبات
-pip install -r requirements.txt
-
-# 2. تشغيل التطبيق
-python main.py
+git clone https://github.com/yourusername/inventory-system.git
+cd inventory-system
 ```
 
-### التثبيت من EXE
+2. **Install requirements**
 ```bash
-# 1. تشغيل ملف التثبيت
+pip install -r requirements.txt
+```
+
+3. **Run the application**
+```bash
+python run.py
+```
+
+4. **Open browser**
+```
+http://127.0.0.1:5000
+```
+
+### Windows Installation
+
+1. **Run install script**
+```bash
 install.bat
-
-# 2. أو تشغيل مباشر
-inventory_system.exe
 ```
 
-## 📱 الوصول للتطبيق
-
-بعد التشغيل، افتح المتصفح واذهب إلى:
-```
-http://127.0.0.1:8080
-```
-
-## 🔑 بيانات الدخول الافتراضية
-
-| الدور | اسم المستخدم | كلمة المرور |
-|-------|---------------|-------------|
-| مدير | admin | admin123 |
-| كاشير | cashier | cashier123 |
-
-## 🛠️ الاستخدام
-
-### 1. إدارة المنتجات
-- إضافة منتجات جديدة
-- تعديل بيانات المنتجات
-- إدارة الفئات
-
-### 2. نظام POS
-- اختيار المنتجات من الشبكة
-- إضافة المنتجات للسلة
-- حساب الخصم والضريبة
-- طباعة الفاتورة
-
-### 3. التقارير
-- عرض التقارير اليومية
-- تقارير المبيعات الشهرية
-- تقارير المخزون
-
-## 📁 هيكل المشروع
-
-```
-inventory-management/
-├── app/                    # كود التطبيق
-│   ├── static/            # ملفات CSS و JS
-│   ├── templates/         # قوالب HTML
-│   ├── views/            # صفحات التطبيق
-│   └── models/           # نماذج قاعدة البيانات
-├── dist/                  # ملفات EXE
-├── inventory.db           # قاعدة البيانات
-├── main.py               # ملف التشغيل الرئيسي
-├── requirements.txt      # متطلبات Python
-├── install.bat           # ملف التثبيت
-└── README.md             # هذا الملف
-```
-
-## 🔧 التطوير
-
-### إعداد بيئة التطوير
+2. **Start application**
 ```bash
-# 1. استنساخ المشروع
-git clone https://github.com/username/inventory-management.git
+start.bat
+```
 
-# 2. الانتقال للمجلد
-cd inventory-management
+## 📁 Project Structure
 
-# 3. تثبيت المتطلبات
+```
+inventory-system/
+├── app/                          # Main application
+│   ├── __init__.py              # Flask configuration
+│   ├── models/                  # Data models
+│   │   └── database.py          # Database management
+│   ├── static/                  # Static files
+│   │   ├── css/
+│   │   │   └── style.css        # CSS styles
+│   │   └── js/
+│   │       └── main.js          # JavaScript
+│   ├── templates/               # HTML templates
+│   │   ├── base.html           # Base template
+│   │   ├── dashboard.html      # Dashboard
+│   │   ├── categories/         # Category pages
+│   │   ├── invoices/           # Invoice pages
+│   │   ├── items/              # Product pages
+│   │   ├── sales/              # Sales pages
+│   │   └── users/              # User pages
+│   ├── utils/                  # Utility functions
+│   │   └── auth.py             # Authentication system
+│   └── views/                  # View controllers
+│       ├── main.py             # Main page
+│       ├── sales.py            # Sales management
+│       ├── invoices.py         # Invoice management
+│       ├── items.py            # Product management
+│       └── users.py            # User management
+├── backups/                     # Backup files
+├── config.py                    # Application settings
+├── backup.py                    # Backup system
+├── run.py                       # Main run file
+├── start.bat                    # Quick start (Windows)
+├── requirements.txt             # Python requirements
+├── inventory.db                 # Database
+└── README.md                    # This file
+```
+
+## 🔧 Configuration
+
+### Database Settings
+```python
+# config.py
+DATABASE_PATH = 'inventory.db'
+SECRET_KEY = 'your-secret-key-here'
+```
+
+### Backup Settings
+```python
+# backup.py
+BACKUP_DIR = 'backups'
+BACKUP_RETENTION_DAYS = 30
+```
+
+## 👤 Default Users
+
+### System Administrator
+- **Username:** admin
+- **Password:** admin123
+- **Permissions:** All permissions
+
+### Cashier
+- **Username:** cashier
+- **Password:** cashier123
+- **Permissions:** Sales and invoices only
+
+## 📱 Usage
+
+### 1. Login
+- Open browser and navigate to `http://127.0.0.1:5000`
+- Use default user credentials
+- Change password after first login
+
+### 2. Product Management
+- Navigate to "Products" from menu
+- Add new products with details
+- Categorize products appropriately
+- Set reorder levels
+
+### 3. Point of Sale
+- Navigate to "Point of Sale" from menu
+- Search products or use filtering
+- Add products to cart
+- Calculate total and complete sale
+
+### 4. Invoice Management
+- View all invoices from "Invoices"
+- Print invoices in required format
+- Export data for analysis
+
+## 🔒 Security
+
+### Data Protection
+- **Password encryption** using bcrypt
+- **Secure sessions** with Flask-Session
+- **CSRF protection** with Flask-WTF
+- **Database encryption** (optional)
+
+### Backups
+- **Automatic backups** daily
+- **Data compression** to save space
+- **Easy restoration** when needed
+- **Backup encryption** (optional)
+
+## 📊 Reports
+
+### Sales Reports
+- **Daily sales** with product details
+- **Weekly sales** with trend analysis
+- **Monthly sales** with period comparison
+- **Yearly sales** with comprehensive statistics
+
+### Inventory Reports
+- **Low stock products** with alerts
+- **Best-selling products** with performance analysis
+- **Purchase reports** with supplier details
+- **Adjustment reports** with change logs
+
+## 🛠️ Development
+
+### Adding New Features
+1. **Create new Blueprint** in `app/views/`
+2. **Add templates** in `app/templates/`
+3. **Update menu** in `base.html`
+4. **Add permissions** in `auth.py`
+
+### Customizing Design
+1. **Modify CSS** in `app/static/css/style.css`
+2. **Add JavaScript** in `app/static/js/main.js`
+3. **Customize templates** in `app/templates/`
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### Application won't start
+```bash
+# Check Python
+python --version
+
+# Check requirements
 pip install -r requirements.txt
 
-# 4. تشغيل التطبيق
-python main.py
+# Check port
+netstat -an | findstr :5000
 ```
 
-### بناء EXE
+#### Database issues
 ```bash
-# بناء ملف EXE
-build_exe.bat
+# Recreate database
+rm inventory.db
+python -c "from app.models.database import init_db; init_db()"
 ```
 
-## 📋 المتطلبات
-
-- Flask 2.3.3
-- Werkzeug 2.3.7
-- SQLite3 (مدمج مع Python)
-
-## 🐛 حل المشاكل
-
-### مشكلة: التطبيق لا يعمل
+#### Backup issues
 ```bash
-# تشغيل التشخيص
-python debug.py
+# Run backup manually
+python backup.py
 ```
 
-### مشكلة: EXE لا يعمل
-```bash
-# إعادة بناء EXE
-build_exe.bat
-```
+## 📞 Support
 
-## 📞 الدعم الفني
+### Getting Help
+- **GitHub Issues:** Report problems
+- **Documentation:** Detailed documentation
+- **Community:** Discussions and questions
 
-للحصول على الدعم الفني:
-- 📧 البريد الإلكتروني: support@example.com
-- 📱 الهاتف: +1234567890
+### Contributing
+1. **Fork** the project
+2. **Create branch** for new feature
+3. **Commit** changes
+4. **Push** to branch
+5. **Create Pull Request**
 
-## 📄 الترخيص
+## 📄 License
 
-هذا المشروع مرخص تحت رخصة MIT. راجع ملف [LICENSE](LICENSE) للتفاصيل.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 المطور
+## 🙏 Acknowledgments
 
-**محمد فاروق**
-- 📧 البريد الإلكتروني: mfarouk@example.com
-- 🌐 الموقع: https://mfarouk.dev
+- **Flask** - Python web framework
+- **Bootstrap** - CSS library
+- **SQLite** - Database
+- **Bootstrap Icons** - Icons
 
-## 🙏 شكر وتقدير
+## 📈 Development Roadmap
 
-شكر خاص لجميع المساهمين في هذا المشروع.
+### Next Release
+- [ ] Mobile application
+- [ ] Advanced API
+- [ ] Advanced reports
+- [ ] Multi-currency support
+- [ ] Payment system integration
+
+### Future Releases
+- [ ] AI-powered forecasting
+- [ ] Advanced data analytics
+- [ ] E-commerce integration
+- [ ] Multi-language support
 
 ---
 
-**جميع الحقوق محفوظة © 2025**
+**This system has been carefully developed to be a comprehensive tool for inventory and sales management. We hope it will be useful for your business! 🚀**
