@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-cart-dash me-2"></i>شراء جديد</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" id="purchaseForm">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6>بيانات المورد</h6>
+              <div class="mb-3">
+                <label class="form-label">اسم المورد</label>
+                <input name="supplier_name" class="form-control" placeholder="اسم المورد">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">هاتف المورد</label>
+                <input name="supplier_phone" class="form-control" placeholder="رقم الهاتف">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">طريقة الدفع</label>
+                <select name="payment_method" class="form-select">
+                  <option value="cash">نقدي</option>
+                  <option value="card">بطاقة</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6>إضافة أصناف</h6>
+              <div class="mb-3">
+                <label class="form-label">اختر الصنف</label>
+                <select id="itemSelect" class="form-select">
+                  <option value="">اختر الصنف</option>
+                  {% for item in items %}
+                  <option value="{{ item['id'] }}" data-name="{{ item['name'] }}">
+                    {{ item['name'] }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="row">
+                <div class="col-6">
+                  <label class="form-label">الكمية</label>
+                  <input type="number" id="itemQuantity" class="form-control" min="1" value="1">
+                </div>
+                <div class="col-6">
+                  <label class="form-label">سعر التكلفة</label>
+                  <input type="number" id="itemCost" class="form-control" step="0.01" min="0" value="0">
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary mt-3" onclick="addItem()">
+                <i class="bi bi-plus-circle me-1"></i>إضافة للقائمة
+              </button>
+            </div>
+          </div>
+          
+          <div class="card mb-4">
+            <div class="card-header">
+              <h6 class="mb-0">الأصناف المختارة</h6>
+            </div>
+            <div class="card-body">
+              <div id="itemsList" class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>الصنف</th>
+                      <th>الكمية</th>
+                      <th>سعر التكلفة</th>
+                      <th>المجموع</th>
+                      <th>العمليات</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemsTableBody">
+                    <tr id="noItems">
+                      <td colspan="5" class="text-center text-muted">لا توجد أصناف</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row mb-4">
+            <div class="col-md-4">
+              <label class="form-label">الخصم</label>
+              <input name="discount_amount" type="number" class="form-control" step="0.01" min="0" value="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">الضريبة</label>
+              <input name="tax_amount" type="number" class="form-control" step="0.01" min="0" value="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">المجموع النهائي</label>
+              <input type="text" id="finalTotal" class="form-control" readonly value="0.00 ج.س">
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning" id="submitBtn" disabled>
+              <i class="bi bi-check-circle me-1"></i>إتمام الشراء
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-right me-1"></i>إلغاء
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedItems = [];
+
+function addItem() {
+  const itemSelect = document.getElementById('itemSelect');
+  const quantity = parseInt(document.getElementById('itemQuantity').value);
+  const cost = parseFloat(document.getElementById('itemCost').value);
+  
+  if (!itemSelect.value || quantity <= 0 || cost <= 0) {
+    alert('يرجى اختيار صنف وإدخال كمية وسعر صحيحين');
+    return;
+  }
+  
+  const itemId = itemSelect.value;
+  const itemName = itemSelect.options[itemSelect.selectedIndex].text;
+  const total = quantity * cost;
+  
+  // Check if item already exists
+  const existingItem = selectedItems.find(item => item.item_id === itemId);
+  if (existingItem) {
+    existingItem.quantity += quantity;
+    existingItem.total_cost += total;
+  } else {
+    selectedItems.push({
+      item_id: itemId,
+      name: itemName,
+      quantity: quantity,
+      unit_cost: cost,
+      total_cost: total
+    });
+  }
+  
+  updateItemsDisplay();
+  updateTotal();
+  
+  // Reset form
+  itemSelect.value = '';
+  document.getElementById('itemQuantity').value = 1;
+  document.getElementById('itemCost').value = 0;
+}
+
+function removeItem(itemId) {
+  selectedItems = selectedItems.filter(item => item.item_id !== itemId);
+  updateItemsDisplay();
+  updateTotal();
+}
+
+function updateItemsDisplay() {
+  const tbody = document.getElementById('itemsTableBody');
+  const noItems = document.getElementById('noItems');
+  
+  if (selectedItems.length === 0) {
+    tbody.innerHTML = '<tr id="noItems"><td colspan="5" class="text-center text-muted">لا توجد أصناف</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = selectedItems.map(item => `
+    <tr>
+      <td>${item.name}</td>
+      <td>${item.quantity}</td>
+      <td>${item.unit_cost.toFixed(2)} ج.س</td>
+      <td>${item.total_cost.toFixed(2)} ج.س</td>
+      <td>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem('${item.item_id}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateTotal() {
+  const subtotal = selectedItems.reduce((sum, item) => sum + item.total_cost, 0);
+  const discount = parseFloat(document.querySelector('input[name="discount_amount"]').value) || 0;
+  const tax = parseFloat(document.querySelector('input[name="tax_amount"]').value) || 0;
+  const final = subtotal - discount + tax;
+  
+  document.getElementById('finalTotal').value = final.toFixed(2) + ' ج.س';
+  document.getElementById('submitBtn').disabled = selectedItems.length === 0;
+}
+
+// Add hidden inputs for form submission
+document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+  if (selectedItems.length === 0) {
+    e.preventDefault();
+    alert('يرجى إضافة أصناف للشراء');
+    return;
+  }
+  
+  // Add hidden inputs for each item
+  selectedItems.forEach((item, index) => {
+    const itemIdInput = document.createElement('input');
+    itemIdInput.type = 'hidden';
+    itemIdInput.name = `item_${index}_id`;
+    itemIdInput.value = item.item_id;
+    
+    const quantityInput = document.createElement('input');
+    quantityInput.type = 'hidden';
+    quantityInput.name = `item_${item.item_id}_quantity`;
+    quantityInput.value = item.quantity;
+    
+    const costInput = document.createElement('input');
+    costInput.type = 'hidden';
+    costInput.name = `item_${item.item_id}_cost`;
+    costInput.value = item.unit_cost;
+    
+    this.appendChild(itemIdInput);
+    this.appendChild(quantityInput);
+    this.appendChild(costInput);
+  });
+});
+
+// Update total when discount or tax changes
+document.querySelector('input[name="discount_amount"]').addEventListener('input', updateTotal);
+document.querySelector('input[name="tax_amount"]').addEventListener('input', updateTotal);
+</script>
+{% endblock %}

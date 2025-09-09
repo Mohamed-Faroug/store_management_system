@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-receipt me-2"></i>قائمة الفواتير</h2>
+  <a href="{{ url_for('invoices.new') }}" class="btn btn-info">
+    <i class="bi bi-plus-circle me-1"></i>فاتورة جديدة
+  </a>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-search me-2"></i>البحث في الفواتير</h5>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('invoices.list') }}">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="date" class="form-label">التاريخ</label>
+          <input type="date" class="form-control" id="date" name="date" value="{{ search_date }}">
+        </div>
+        <div class="col-md-3">
+          <label for="customer" class="form-label">العميل</label>
+          <input type="text" class="form-control" id="customer" name="customer" 
+                 placeholder="اسم العميل أو رقم الهاتف" value="{{ search_customer }}">
+        </div>
+        <div class="col-md-3">
+          <label for="invoice" class="form-label">رقم الفاتورة</label>
+          <input type="text" class="form-control" id="invoice" name="invoice" 
+                 placeholder="رقم الفاتورة" value="{{ search_invoice }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">&nbsp;</label>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search me-1"></i>بحث
+            </button>
+            <a href="{{ url_for('invoices.list') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+            </a>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">إجمالي الفواتير</h6>
+            <h4 class="mb-0">{{ invoices|length }}</h4>
+          </div>
+          <div class="align-self-center">
+            <i class="bi bi-receipt display-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">إجمالي المبيعات</h6>
+            <h4 class="mb-0">{{ "%.0f"|format(invoices|sum(attribute='final_amount')) }} ج.س</h4>
+          </div>
+          <div class="align-self-center">
+            <i class="bi bi-currency-dollar display-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-info text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">فواتير نقدية</h6>
+            <h4 class="mb-0">{{ invoices|selectattr('payment_method', 'equalto', 'cash')|list|length }}</h4>
+          </div>
+          <div class="align-self-center">
+            <i class="bi bi-cash display-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">فواتير بطاقة</h6>
+            <h4 class="mb-0">{{ invoices|selectattr('payment_method', 'ne', 'cash')|list|length }}</h4>
+          </div>
+          <div class="align-self-center">
+            <i class="bi bi-credit-card display-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Results Info -->
+{% if search_date or search_customer or search_invoice %}
+<div class="alert alert-info mb-3">
+  <i class="bi bi-info-circle me-2"></i>
+  <strong>نتائج البحث:</strong>
+  {% if search_date %}التاريخ: {{ search_date }}{% endif %}
+  {% if search_customer %} | العميل: {{ search_customer }}{% endif %}
+  {% if search_invoice %} | رقم الفاتورة: {{ search_invoice }}{% endif %}
+  <span class="badge bg-primary ms-2">{{ invoices|length }} نتيجة</span>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>رقم الفاتورة</th>
+            <th>العميل</th>
+            <th>الهاتف</th>
+            <th>المجموع</th>
+            <th>طريقة الدفع</th>
+            <th>أنشأها</th>
+            <th>التاريخ</th>
+            <th>العمليات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+          <tr>
+            <td><span class="badge bg-info">{{ invoice['id'] }}</span></td>
+            <td><strong>{{ invoice['invoice_number'] }}</strong></td>
+            <td>{{ invoice['customer_name'] or 'عميل نقدي' }}</td>
+            <td>{{ invoice['customer_phone'] or '-' }}</td>
+            <td><strong class="text-success">{{ '%.2f'|format(invoice['final_amount']) }} ج.س</strong></td>
+            <td>
+              <span class="badge {% if invoice['payment_method'] == 'cash' %}bg-success{% else %}bg-info{% endif %}">
+                {{ 'نقدي' if invoice['payment_method'] == 'cash' else 'بطاقة' }}
+              </span>
+            </td>
+            <td>{{ invoice['created_by_name'] or '-' }}</td>
+            <td><small class="text-muted">{{ invoice['created_at'] }}</small></td>
+            <td>
+              <div class="btn-group" role="group">
+                <a href="{{ url_for('invoices.view', invoice_id=invoice['id']) }}" class="btn btn-sm btn-outline-primary" title="عرض">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('invoices.print_invoice', invoice_id=invoice['id']) }}" target="_blank" class="btn btn-sm btn-outline-success" title="طباعة A4">
+                  <i class="bi bi-printer"></i>
+                </a>
+                <a href="{{ url_for('invoices.print_invoice_58mm', invoice_id=invoice['id']) }}" target="_blank" class="btn btn-sm btn-outline-info" title="طباعة 58mm">
+                  <i class="bi bi-printer-fill"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="text-center text-muted py-4">
+              <i class="bi bi-inbox display-4 d-block mb-3"></i>
+              لا توجد فواتير
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when date changes
+    const dateInput = document.getElementById('date');
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            if (this.value) {
+                this.form.submit();
+            }
+        });
+    }
+    
+    // Clear search when clicking reset button
+    const resetBtn = document.querySelector('a[href="{{ url_for("invoices.list") }}"]');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Clear all form inputs
+            document.getElementById('date').value = '';
+            document.getElementById('customer').value = '';
+            document.getElementById('invoice').value = '';
+            // Submit form
+            this.form.submit();
+        });
+    }
+    
+    // Add loading state to search button
+    const searchForm = document.querySelector('form[method="GET"]');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function() {
+            const searchBtn = this.querySelector('button[type="submit"]');
+            if (searchBtn) {
+                searchBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>جاري البحث...';
+                searchBtn.disabled = true;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

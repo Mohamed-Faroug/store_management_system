@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">أمر شراء رقم: {{ purchase['id'] }}</h5>
+        <small class="text-muted">تاريخ الإنشاء: {{ purchase['created_at'] }}</small>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>بيانات المورد:</h6>
+            <p><strong>الاسم:</strong> {{ purchase['supplier_name'] or '-' }}</p>
+            <p><strong>الهاتف:</strong> {{ purchase['supplier_phone'] or '-' }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>بيانات الشراء:</h6>
+            <p><strong>طريقة الدفع:</strong> {{ 'نقدي' if purchase['payment_method'] == 'cash' else 'بطاقة' }}</p>
+            <p><strong>أنشأها:</strong> {{ purchase['created_by_name'] or '-' }}</p>
+          </div>
+        </div>
+        
+        <h6>الأصناف:</h6>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>الصنف</th>
+              <th>الكمية</th>
+              <th>سعر التكلفة</th>
+              <th>المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>{{ item['item_name'] }}</td>
+              <td>{{ item['quantity'] }}</td>
+              <td>{{ '%.2f'|format(item['unit_cost']) }} ج.س</td>
+              <td>{{ '%.2f'|format(item['total_cost']) }} ج.س</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3"><strong>المجموع الفرعي:</strong></td>
+              <td><strong>{{ '%.2f'|format(purchase['total_amount']) }} ج.س</strong></td>
+            </tr>
+            {% if purchase['discount_amount'] > 0 %}
+            <tr>
+              <td colspan="3"><strong>الخصم:</strong></td>
+              <td><strong>-{{ '%.2f'|format(purchase['discount_amount']) }} ج.س</strong></td>
+            </tr>
+            {% endif %}
+            {% if purchase['tax_amount'] > 0 %}
+            <tr>
+              <td colspan="3"><strong>الضريبة:</strong></td>
+              <td><strong>{{ '%.2f'|format(purchase['tax_amount']) }} ج.س</strong></td>
+            </tr>
+            {% endif %}
+            <tr class="table-primary">
+              <td colspan="3"><strong>المجموع النهائي:</strong></td>
+              <td><strong>{{ '%.2f'|format(purchase['final_amount']) }} ج.س</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <div class="mt-4 d-flex gap-2">
+          <a href="{{ url_for('purchases.list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right me-1"></i>رجوع
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

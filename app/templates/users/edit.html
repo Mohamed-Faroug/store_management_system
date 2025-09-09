@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>تعديل المستخدم</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label class="form-label">اسم المستخدم *</label>
+            <input name="username" class="form-control" required value="{{ user['username'] }}">
+            <div class="invalid-feedback">يرجى إدخال اسم المستخدم</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">كلمة المرور الجديدة</label>
+            <input name="password" type="password" class="form-control" placeholder="اتركها فارغة للحفاظ على كلمة المرور الحالية" minlength="6">
+            <div class="form-text">اتركها فارغة للحفاظ على كلمة المرور الحالية</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">الدور *</label>
+            <select name="role" class="form-select" required>
+              <option value="manager" {% if user['role'] == 'manager' %}selected{% endif %}>مدير</option>
+              <option value="clerk" {% if user['role'] == 'clerk' %}selected{% endif %}>كاشير</option>
+            </select>
+            <div class="invalid-feedback">يرجى اختيار الدور</div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>حفظ التغييرات
+            </button>
+            <a href="{{ url_for('users.list') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-right me-1"></i>إلغاء
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Bootstrap form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+</script>
+{% endblock %}

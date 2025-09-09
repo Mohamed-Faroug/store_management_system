@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-gear me-2"></i>تعديل المخزون</h2>
+  <a href="{{ url_for('stock.alerts') }}" class="btn btn-warning">
+    <i class="bi bi-exclamation-triangle me-1"></i>تنبيهات المخزون
+  </a>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">تعديل كمية صنف</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label class="form-label">اختر الصنف *</label>
+            <select name="item_id" class="form-select" required>
+              <option value="">اختر الصنف</option>
+              {% for item in items %}
+              <option value="{{ item['id'] }}" {% if request.args.get('item_id') == item['id']|string %}selected{% endif %}>
+                {{ item['name'] }} - الكمية الحالية: {{ item['quantity'] }}
+                {% if item['category_name'] %} ({{ item['category_name'] }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">يرجى اختيار صنف</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">نوع التعديل *</label>
+            <select name="adjustment_type" class="form-select" required>
+              <option value="">اختر نوع التعديل</option>
+              <option value="add">إضافة</option>
+              <option value="subtract">خصم</option>
+              <option value="set">تعيين</option>
+            </select>
+            <div class="invalid-feedback">يرجى اختيار نوع التعديل</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">الكمية *</label>
+            <input name="quantity" type="number" class="form-control" required min="1" placeholder="أدخل الكمية">
+            <div class="invalid-feedback">يرجى إدخال كمية صحيحة</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">السبب</label>
+            <textarea name="reason" class="form-control" rows="3" placeholder="سبب التعديل (اختياري)"></textarea>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i>تطبيق التعديل
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-right me-1"></i>إلغاء
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">جميع الأصناف</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>الصنف</th>
+                <th>الفئة</th>
+                <th>الكمية</th>
+                <th>العمليات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td><strong>{{ item['name'] }}</strong></td>
+                <td>
+                  {% if item['category_name'] %}
+                    <span class="badge bg-info">{{ item['category_name'] }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge {% if item['quantity'] == 0 %}bg-danger{% elif item['quantity'] <= item['reorder_level'] %}bg-warning{% else %}bg-success{% endif %}">
+                    {{ item['quantity'] }}
+                  </span>
+                </td>
+                <td>
+                  <a href="?item_id={{ item['id'] }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Bootstrap form validation
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var forms = document.getElementsByClassName('needs-validation');
+    var validation = Array.prototype.filter.call(forms, function(form) {
+      form.addEventListener('submit', function(event) {
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  }, false);
+})();
+
+// Auto-scroll to form when item is selected
+if (window.location.search.includes('item_id=')) {
+  document.querySelector('form').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

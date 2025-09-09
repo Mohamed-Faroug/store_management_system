@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header no-print">
+        <h5 class="mb-0">فاتورة رقم: {{ invoice['invoice_number'] }}</h5>
+        <small class="text-muted">تاريخ الإنشاء: {{ invoice['created_at'] }}</small>
+      </div>
+      <div class="card-body printable">
+        <!-- Print Header -->
+        <div class="text-center mb-4" id="printHeader" style="display: none;">
+          <h2 class="fw-bold">فاتورة مبيعات</h2>
+          <h4>رقم الفاتورة: {{ invoice['invoice_number'] }}</h4>
+          <p>تاريخ: {{ invoice['created_at'] }}</p>
+          <hr style="border: 2px solid #000; margin: 20px 0;">
+        </div>
+        
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>بيانات العميل:</h6>
+            <p><strong>الاسم:</strong> {{ invoice['customer_name'] or 'عميل نقدي' }}</p>
+            <p><strong>الهاتف:</strong> {{ invoice['customer_phone'] or '-' }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>بيانات الفاتورة:</h6>
+            <p><strong>طريقة الدفع:</strong> {{ 'نقدي' if invoice['payment_method'] == 'cash' else 'بطاقة' }}</p>
+            <p><strong>أنشأها:</strong> {{ invoice['created_by_name'] }}</p>
+          </div>
+        </div>
+        
+        <h6>الأصناف:</h6>
+        {% if items %}
+        <table class="table table-sm">
+          <thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>{{ item['item_name'] or 'غير محدد' }}</td>
+              <td>{{ item['quantity'] or 0 }}</td>
+              <td>{{ '%.2f'|format(item['unit_price'] or 0) }} ج.س</td>
+              <td>{{ '%.2f'|format(item['total_price'] or 0) }} ج.س</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr><td colspan="3"><strong>المجموع الفرعي:</strong></td><td><strong>{{ '%.2f'|format(invoice['total_amount']) }} ج.س</strong></td></tr>
+            {% if invoice['discount_amount'] > 0 %}
+            <tr><td colspan="3"><strong>الخصم:</strong></td><td><strong>-{{ '%.2f'|format(invoice['discount_amount']) }} ج.س</strong></td></tr>
+            {% endif %}
+            {% if invoice['tax_amount'] > 0 %}
+            <tr><td colspan="3"><strong>الضريبة:</strong></td><td><strong>{{ '%.2f'|format(invoice['tax_amount']) }} ج.س</strong></td></tr>
+            {% endif %}
+            <tr class="table-primary"><td colspan="3"><strong>المجموع النهائي:</strong></td><td><strong>{{ '%.2f'|format(invoice['final_amount']) }} ج.س</strong></td></tr>
+          </tfoot>
+        </table>
+        {% else %}
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          لا توجد أصناف في هذه الفاتورة
+        </div>
+        {% endif %}
+        
+        <div class="mt-4 d-flex gap-2 no-print">
+          <a href="{{ url_for('invoices.print_invoice', invoice_id=invoice['id']) }}" target="_blank" class="btn btn-primary">
+            <i class="bi bi-printer me-2"></i>طباعة A4
+          </a>
+          <a href="{{ url_for('invoices.print_invoice_58mm', invoice_id=invoice['id']) }}" target="_blank" class="btn btn-success">
+            <i class="bi bi-printer me-2"></i>طباعة 58mm
+          </a>
+          <a href="{{ url_for('invoices.list') }}" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function printInvoice() {
+  console.log('Starting print process...');
+  
+  // Show print header
+  const printHeader = document.getElementById('printHeader');
+  if (printHeader) {
+    printHeader.style.display = 'block';
+    console.log('Print header shown');
+  }
+  
+  // Wait a moment for the header to show
+  setTimeout(() => {
+    console.log('Printing...');
+    window.print();
+    
+    // Hide print header after printing
+    setTimeout(() => {
+      if (printHeader) {
+        printHeader.style.display = 'none';
+        console.log('Print header hidden');
+      }
+    }, 1000);
+  }, 100);
+}
+</script>
+{% endblock %}

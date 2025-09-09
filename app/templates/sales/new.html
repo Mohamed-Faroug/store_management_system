@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="pos-container">
+  <!-- Header -->
+  <div class="pos-header mb-4">
+    <h2><i class="bi bi-cart-plus me-2"></i>نقطة البيع (POS)</h2>
+    <div class="pos-time" id="current-time"></div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Side - Items Grid -->
+    <div class="col-lg-8">
+      <!-- Search Bar -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="item-search" placeholder="البحث بالاسم أو الكود...">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <select class="form-select" id="category-filter">
+                <option value="">جميع الفئات</option>
+                {% for category in categories %}
+                <option value="{{ category['id'] }}">{{ category['name'] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Grid -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">الأصناف المتاحة</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3" id="items-grid">
+            {% for item in items[:9] %}
+            <div class="col-md-4 col-sm-6 item-card" data-item-id="{{ item['id'] }}" data-category="{{ item['category_id'] }}" data-name="{{ item['name']|lower }}" data-sku="{{ item['sku']|lower }}">
+              <div class="card h-100 item-card-inner" onclick="addToCart({{ item['id'] }}, '{{ item['name'] }}', {{ item['selling_price'] }}, {{ item['quantity'] }})">
+                <div class="card-body text-center">
+                  <div class="item-image mb-2">
+                    <i class="bi bi-box display-4 text-primary"></i>
+                  </div>
+                  <h6 class="card-title">{{ item['name'] }}</h6>
+                  <p class="card-text text-muted small">{{ item['sku'] }}</p>
+                  <div class="item-price">
+                    <span class="badge bg-success fs-6">{{ '%.2f'|format(item['selling_price']) }} ج.س</span>
+                  </div>
+                  <div class="item-stock mt-2">
+                    <small class="text-muted">المخزون: {{ item['quantity'] }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side - Cart -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-cart3 me-2"></i>سلة المشتريات</h5>
+        </div>
+        <div class="card-body d-flex flex-column">
+          <!-- Cart Items -->
+          <div class="cart-items flex-grow-1" id="cart-items">
+            <div class="text-center text-muted py-4" id="empty-cart">
+              <i class="bi bi-cart-x display-4 d-block mb-2"></i>
+              <p>السلة فارغة</p>
+            </div>
+          </div>
+
+          <!-- Cart Summary -->
+          <div class="cart-summary mt-3">
+            <div class="row mb-2">
+              <div class="col-6">المجموع الفرعي:</div>
+              <div class="col-6 text-end" id="subtotal">0.00 ج.س</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6">الخصم:</div>
+              <div class="col-6 text-end">
+                <div class="input-group input-group-sm">
+                  <input type="number" class="form-control" id="discount-input" value="0" min="0" step="0.01">
+                  <span class="input-group-text">ج.س</span>
+                </div>
+              </div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6">الضريبة (5%):</div>
+              <div class="col-6 text-end" id="tax-amount">0.00 ج.س</div>
+            </div>
+            <hr>
+            <div class="row mb-3">
+              <div class="col-6"><strong>المجموع الكلي:</strong></div>
+              <div class="col-6 text-end"><strong id="total-amount">0.00 ج.س</strong></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+              <button class="btn btn-success btn-lg" id="checkout-btn" onclick="checkout()" disabled>
+                <i class="bi bi-credit-card me-2"></i>إتمام البيع
+              </button>
+              <button class="btn btn-outline-danger" onclick="clearCart()">
+                <i class="bi bi-trash me-2"></i>مسح السلة
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Form for Submission -->
+<form id="pos-form" method="post" style="display: none;">
+  <input type="hidden" name="items_data" id="items-data">
+  <input type="hidden" name="total_amount" id="total-amount-input">
+  <input type="hidden" name="discount_amount" id="discount-amount-input">
+  <input type="hidden" name="tax_amount" id="tax-amount-input">
+  <input type="hidden" name="final_amount" id="final-amount-input">
+</form>
+
+<script>
+// POS System JavaScript
+let cart = [];
+let currentTime;
+
+// Initialize POS
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('POS System initialized');
+  updateTime();
+  setInterval(updateTime, 1000);
+  setupEventListeners();
+  
+  // Initialize cart as empty array
+  cart = [];
+  console.log('Cart initialized:', cart);
+  
+  // Force initial display update
+  updateCartDisplay();
+  updateTotals();
+  
+  // Add global cart debugging
+  window.debugCart = function() {
+    console.log('Current cart state:', cart);
+    console.log('Cart length:', cart.length);
+    cart.forEach((item, index) => {
+      console.log(`Item ${index}:`, item);
+    });
+  };
+});
+
+// Update current time
+function updateTime() {
+  const now = new Date();
+  currentTime = now.toLocaleString('ar-SA');
+  document.getElementById('current-time').textContent = currentTime;
+}
+
+// Setup event listeners
+function setupEventListeners() {
+  // Search functionality
+  document.getElementById('item-search').addEventListener('input', filterItems);
+  document.getElementById('category-filter').addEventListener('change', filterItems);
+  
+  // Discount input
+  document.getElementById('discount-input').addEventListener('input', updateTotals);
+}
+
+// Filter items based on search and category
+function filterItems() {
+  const searchTerm = document.getElementById('item-search').value.toLowerCase();
+  const categoryFilter = document.getElementById('category-filter').value;
+  const items = document.querySelectorAll('.item-card');
+  
+  let visibleCount = 0;
+  
+  items.forEach(item => {
+    const itemName = item.dataset.name;
+    const itemSku = item.dataset.sku;
+    const itemCategory = item.dataset.category;
+    
+    const matchesSearch = itemName.includes(searchTerm) || itemSku.includes(searchTerm);
+    const matchesCategory = !categoryFilter || itemCategory === categoryFilter;
+    
+    if (matchesSearch && matchesCategory) {
+      item.style.display = 'block';
+      visibleCount++;
+    } else {
+      item.style.display = 'none';
+    }
+  });
+  
+  // Show message if no items found
+  const grid = document.getElementById('items-grid');
+  let noResultsMsg = grid.querySelector('.no-results');
+  
+  if (visibleCount === 0) {
+    if (!noResultsMsg) {
+      noResultsMsg = document.createElement('div');
+      noResultsMsg.className = 'col-12 no-results text-center py-5';
+      noResultsMsg.innerHTML = `
+        <i class="bi bi-search display-4 text-muted d-block mb-3"></i>
+        <h5 class="text-muted">لا توجد أصناف مطابقة للبحث</h5>
+        <p class="text-muted">جرب البحث بكلمات مختلفة أو اختر فئة أخرى</p>
+      `;
+      grid.appendChild(noResultsMsg);
+    }
+  } else if (noResultsMsg) {
+    noResultsMsg.remove();
+  }
+}
+
+// Add item to cart
+function addToCart(itemId, itemName, price, stock) {
+  console.log('Adding item to cart:', {itemId, itemName, price, stock});
+  
+  if (stock <= 0) {
+    alert('هذا الصنف غير متوفر في المخزون');
+    return;
+  }
+  
+  // Convert itemId to number for comparison
+  const numericItemId = parseInt(itemId);
+  const existingItem = cart.find(item => parseInt(item.id) === numericItemId);
+  
+  if (existingItem) {
+    console.log('Item exists, current quantity:', existingItem.quantity);
+    if (existingItem.quantity >= stock) {
+      alert(`الكمية المتاحة: ${stock} فقط`);
+      return;
+    }
+    existingItem.quantity += 1;
+    console.log('Updated quantity to:', existingItem.quantity);
+  } else {
+    const newItem = {
+      id: numericItemId,
+      name: itemName,
+      price: parseFloat(price),
+      quantity: 1,
+      stock: parseInt(stock)
+    };
+    cart.push(newItem);
+    console.log('Added new item:', newItem);
+  }
+  
+  console.log('Cart after update:', cart);
+  console.log('Cart length after update:', cart.length);
+  
+  // Force update display
+  updateCartDisplay();
+  updateTotals();
+  
+  // Show success message
+  showNotification(`${itemName} تم إضافته للسلة`, 'success');
+  
+  // Debug cart state
+  setTimeout(() => {
+    console.log('Cart state after 100ms:', cart);
+    window.debugCart();
+  }, 100);
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  notification.innerHTML = `
+    <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 3000);
+}
+
+// Remove item from cart
+function removeFromCart(itemId) {
+  console.log('Removing item from cart:', itemId);
+  const numericItemId = parseInt(itemId);
+  cart = cart.filter(item => parseInt(item.id) !== numericItemId);
+  console.log('Cart after removal:', cart);
+  updateCartDisplay();
+  updateTotals();
+}
+
+// Update item quantity in cart
+function updateQuantity(itemId, newQuantity) {
+  console.log('Updating quantity:', {itemId, newQuantity});
+  
+  if (newQuantity <= 0) {
+    removeFromCart(itemId);
+    return;
+  }
+  
+  const numericItemId = parseInt(itemId);
+  const item = cart.find(item => parseInt(item.id) === numericItemId);
+  
+  if (item) {
+    if (newQuantity > item.stock) {
+      alert(`الكمية المتاحة: ${item.stock} فقط`);
+      newQuantity = item.stock;
+    }
+    item.quantity = parseInt(newQuantity);
+    console.log('Updated item quantity:', item);
+    updateCartDisplay();
+    updateTotals();
+  } else {
+    console.log('Item not found in cart:', itemId);
+  }
+}
+
+// Update cart display
+function updateCartDisplay() {
+  console.log('Updating cart display, cart length:', cart.length);
+  const cartItems = document.getElementById('cart-items');
+  
+  // Clear the cart items container completely
+  cartItems.innerHTML = '';
+  
+  if (cart.length === 0) {
+    cartItems.innerHTML = '<div class="text-center text-muted py-4" id="empty-cart"><i class="bi bi-cart-x display-4 d-block mb-2"></i><p>السلة فارغة</p></div>';
+    document.getElementById('checkout-btn').disabled = true;
+    console.log('Cart is empty, showing empty message');
+    return;
+  }
+  
+  document.getElementById('checkout-btn').disabled = false;
+  
+  let cartHTML = '';
+  cart.forEach((item, index) => {
+    console.log(`Rendering item ${index}:`, item);
+    const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+    cartHTML += `
+      <div class="cart-item border-bottom py-2" data-item-id="${item.id}">
+        <div class="row align-items-center">
+          <div class="col-6">
+            <h6 class="mb-1">${item.name}</h6>
+            <small class="text-muted">${parseFloat(item.price).toFixed(2)} ج.س</small>
+          </div>
+          <div class="col-3">
+            <div class="input-group input-group-sm">
+              <button class="btn btn-outline-secondary btn-sm" onclick="updateQuantity(${item.id}, ${parseInt(item.quantity) - 1})">-</button>
+              <input type="number" class="form-control text-center" value="${parseInt(item.quantity)}" min="1" max="${parseInt(item.stock)}" onchange="updateQuantity(${item.id}, parseInt(this.value))">
+              <button class="btn btn-outline-secondary btn-sm" onclick="updateQuantity(${item.id}, ${parseInt(item.quantity) + 1})">+</button>
+            </div>
+          </div>
+          <div class="col-2 text-end">
+            <strong>${itemTotal.toFixed(2)} ج.س</strong>
+          </div>
+          <div class="col-1">
+            <button class="btn btn-outline-danger btn-sm" onclick="removeFromCart(${item.id})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  cartItems.innerHTML = cartHTML;
+  console.log('Cart HTML updated with', cart.length, 'items');
+}
+
+// Update totals
+function updateTotals() {
+  console.log('Updating totals, cart:', cart);
+  
+  const subtotal = cart.reduce((sum, item) => {
+    const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+    console.log(`Item ${item.name}: ${item.price} x ${item.quantity} = ${itemTotal}`);
+    return sum + itemTotal;
+  }, 0);
+  
+  const discount = parseFloat(document.getElementById('discount-input').value) || 0;
+  const taxableAmount = subtotal - discount;
+  const tax = taxableAmount * 0.05;
+  const total = taxableAmount + tax;
+  
+  console.log('Calculated totals:', {subtotal, discount, taxableAmount, tax, total});
+  
+  document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' ج.س';
+  document.getElementById('tax-amount').textContent = tax.toFixed(2) + ' ج.س';
+  document.getElementById('total-amount').textContent = total.toFixed(2) + ' ج.س';
+}
+
+// Clear cart
+function clearCart() {
+  if (confirm('هل أنت متأكد من مسح السلة؟')) {
+    console.log('Clearing cart, current length:', cart.length);
+    cart = [];
+    console.log('Cart cleared, new length:', cart.length);
+    updateCartDisplay();
+    updateTotals();
+    document.getElementById('discount-input').value = 0;
+    console.log('Cart display updated after clearing');
+  }
+}
+
+// Checkout
+function checkout() {
+  console.log('Starting checkout, cart:', cart);
+  
+  if (cart.length === 0) {
+    alert('السلة فارغة');
+    return;
+  }
+  
+  // Validate all items have valid quantities
+  for (let item of cart) {
+    if (item.quantity <= 0) {
+      alert(`الكمية غير صحيحة لـ ${item.name}`);
+      return;
+    }
+  }
+  
+  const subtotal = cart.reduce((sum, item) => {
+    const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+    return sum + itemTotal;
+  }, 0);
+  
+  const discount = parseFloat(document.getElementById('discount-input').value) || 0;
+  const taxableAmount = subtotal - discount;
+  const tax = taxableAmount * 0.05;
+  const total = taxableAmount + tax;
+  
+  // Prepare data for submission
+  const itemsData = cart.map(item => ({
+    item_id: parseInt(item.id),
+    quantity: parseInt(item.quantity),
+    unit_price: parseFloat(item.price),
+    total_price: parseFloat(item.price) * parseInt(item.quantity)
+  }));
+  
+  console.log('Checkout data:', {
+    itemsData,
+    subtotal,
+    discount,
+    tax,
+    total
+  });
+  
+  // Fill hidden form
+  document.getElementById('items-data').value = JSON.stringify(itemsData);
+  document.getElementById('total-amount-input').value = subtotal;
+  document.getElementById('discount-amount-input').value = discount;
+  document.getElementById('tax-amount-input').value = tax;
+  document.getElementById('final-amount-input').value = total;
+  
+  // Show loading state
+  const checkoutBtn = document.getElementById('checkout-btn');
+  const originalText = checkoutBtn.innerHTML;
+  checkoutBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>جاري المعالجة...';
+  checkoutBtn.disabled = true;
+  
+  // Submit form
+  document.getElementById('pos-form').submit();
+}
+
+// Add CSS for POS styling
+const style = document.createElement('style');
+style.textContent = `
+  .pos-container {
+    min-height: 100vh;
+  }
+  
+  .pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .pos-time {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  
+  .item-card-inner {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .item-card-inner:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #007bff;
+  }
+  
+  .item-image {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .cart-item {
+    transition: all 0.3s ease;
+  }
+  
+  .cart-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .cart-summary {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+  }
+  
+  #checkout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

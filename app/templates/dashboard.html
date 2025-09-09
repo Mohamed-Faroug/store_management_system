@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0 text-gray-800">
+                    <i class="bi bi-speedometer2 me-2"></i>لوحة التحكم
+                </h1>
+                <div class="text-muted">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    <span id="current-date"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <!-- إجمالي المبيعات اليوم -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                مبيعات اليوم
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-sales">
+                                {{ data.today_sales or 0 }} ج.س
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- إجمالي المنتجات -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                إجمالي المنتجات
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-items">
+                                {{ data.total_items or 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- المنتجات منخفضة المخزون -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                منخفضة المخزون
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-stock">
+                                {{ data.low_stock_items or 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- إجمالي الفواتير -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                فواتير اليوم
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="today-invoices">
+                                {{ data.today_invoices or 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-receipt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-lightning me-2"></i>إجراءات سريعة
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('sales.new') }}" class="btn btn-primary btn-block">
+                                <i class="bi bi-cart-plus me-2"></i>نقطة البيع
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('items.new') }}" class="btn btn-success btn-block">
+                                <i class="bi bi-plus-circle me-2"></i>إضافة منتج
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('invoices.list') }}" class="btn btn-info btn-block">
+                                <i class="bi bi-list-ul me-2"></i>قائمة الفواتير
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('reports.index') }}" class="btn btn-warning btn-block">
+                                <i class="bi bi-graph-up me-2"></i>التقارير
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <!-- المبيعات الأخيرة -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-clock-history me-2"></i>المبيعات الأخيرة
+                    </h6>
+                    <a href="{{ url_for('sales.list') }}" class="btn btn-sm btn-primary">عرض الكل</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>الوقت</th>
+                                    <th>المبلغ</th>
+                                    <th>العميل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-sales">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split me-2"></i>جاري التحميل...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- المنتجات منخفضة المخزون -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>منخفضة المخزون
+                    </h6>
+                    <a href="{{ url_for('stock.alerts') }}" class="btn btn-sm btn-warning">عرض الكل</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>المنتج</th>
+                                    <th>المخزون</th>
+                                    <th>الحد الأدنى</th>
+                                </tr>
+                            </thead>
+                            <tbody id="low-stock-items">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        <i class="bi bi-hourglass-split me-2"></i>جاري التحميل...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">جاري التحميل...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث التاريخ
+    updateCurrentDate();
+    
+    // تحميل البيانات
+    loadDashboardData();
+    
+    // تحديث البيانات كل 30 ثانية
+    setInterval(loadDashboardData, 30000);
+});
+
+function updateCurrentDate() {
+    const now = new Date();
+    const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        weekday: 'long'
+    };
+    document.getElementById('current-date').textContent = now.toLocaleDateString('ar-SA', options);
+}
+
+function loadDashboardData() {
+    // تحميل المبيعات الأخيرة
+    fetch('/api/recent-sales')
+        .then(response => response.json())
+        .then(data => {
+            updateRecentSales(data);
+        })
+        .catch(error => {
+            console.error('خطأ في تحميل المبيعات:', error);
+        });
+    
+    // تحميل المنتجات منخفضة المخزون
+    fetch('/api/low-stock')
+        .then(response => response.json())
+        .then(data => {
+            updateLowStockItems(data);
+        })
+        .catch(error => {
+            console.error('خطأ في تحميل المخزون:', error);
+        });
+}
+
+function updateRecentSales(sales) {
+    const tbody = document.getElementById('recent-sales');
+    
+    if (sales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">لا توجد مبيعات</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = sales.map(sale => `
+        <tr>
+            <td>${formatTime(sale.created_at)}</td>
+            <td>${sale.total_amount} ج.س</td>
+            <td>${sale.customer_name || 'غير محدد'}</td>
+        </tr>
+    `).join('');
+}
+
+function updateLowStockItems(items) {
+    const tbody = document.getElementById('low-stock-items');
+    
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">جميع المنتجات متوفرة</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = items.map(item => `
+        <tr>
+            <td>${item.name}</td>
+            <td><span class="badge badge-warning">${item.quantity}</span></td>
+            <td>${item.min_quantity}</td>
+        </tr>
+    `).join('');
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ar-SA', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+}
+
+// إظهار/إخفاء شاشة التحميل
+function showLoading() {
+    document.getElementById('loading-overlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+</script>
+{% endblock %}

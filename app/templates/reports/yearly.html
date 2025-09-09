@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="bi bi-calendar-year me-2"></i>التقرير السنوي</h2>
+  <small class="text-muted">{{ year }}</small>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="stats-card">
+      <i class="bi bi-cart-check feature-icon"></i>
+      <h3>{{ summary['total_sales'] or 0 }}</h3>
+      <p>إجمالي المبيعات</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stats-card">
+      <i class="bi bi-stack feature-icon"></i>
+      <h3>{{ summary['total_quantity'] or 0 }}</h3>
+      <p>إجمالي الكمية</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stats-card">
+      <i class="bi bi-currency-dollar feature-icon"></i>
+      <h3>{{ '%.2f'|format(summary['total_amount'] or 0) }}</h3>
+      <p>إجمالي المبلغ (ج.س)</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">التوزيع الشهري</h5>
+      </div>
+      <div class="card-body">
+        {% if monthly_breakdown %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>الشهر</th>
+                <th>المبيعات</th>
+                <th>الكمية</th>
+                <th>المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for month in monthly_breakdown %}
+              <tr>
+                <td><strong>{{ month['sale_month'] }}</strong></td>
+                <td><span class="badge bg-primary">{{ month['sales_count'] }}</span></td>
+                <td><span class="badge bg-info">{{ month['total_quantity'] }}</span></td>
+                <td>{{ '%.2f'|format(month['total_amount']) }} ج.س</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">لا توجد مبيعات هذا العام</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">أداء الفئات</h5>
+      </div>
+      <div class="card-body">
+        {% if category_performance %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>الفئة</th>
+                <th>المبيعات</th>
+                <th>الكمية</th>
+                <th>المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat in category_performance %}
+              <tr>
+                <td><strong>{{ cat['category_name'] or 'غير مصنف' }}</strong></td>
+                <td><span class="badge bg-success">{{ cat['sales_count'] }}</span></td>
+                <td><span class="badge bg-info">{{ cat['total_quantity'] }}</span></td>
+                <td>{{ '%.2f'|format(cat['total_amount']) }} ج.س</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">لا توجد مبيعات هذا العام</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-right me-1"></i>رجوع للتقارير
+  </a>
+</div>
+{% endblock %}
