@@ -60,8 +60,8 @@
 
 ### الطريقة السهلة (موصى بها)
 ```bash
-git clone https://github.com/Mohamed-Faroug/inventory_system.git
-cd inventory_system
+git clone https://github.com/Mohamed-Faroug/store_management_system.git
+cd store_management_system
 ```
 
 ثم شغل الملف:
