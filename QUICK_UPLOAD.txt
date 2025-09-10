@@ -1,0 +1,61 @@
+========================================
+    دليل الرفع السريع على GitHub
+    Quick Upload Guide to GitHub
+========================================
+
+## الخطوات السريعة:
+
+### 1. إعداد Git
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+### 2. إنشاء مستودع على GitHub
+- اذهب إلى https://github.com
+- اضغط "New repository"
+- اكتب اسم: store-management-system
+- اضغط "Create repository"
+
+### 3. رفع المشروع
+```bash
+cd store_management_system
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/username/store-management-system.git
+git push -u origin main
+```
+
+## الملفات المطلوبة:
+
+### ملفات أساسية:
+- app/ (مجلد التطبيق)
+- run.py
+- config.py
+- requirements.txt
+- README.md
+- .gitignore
+
+### ملفات التشغيل:
+- START.bat
+- INSTALL_AND_RUN.bat
+- AUTO_START.bat
+- START_HIDDEN.vbs
+
+### ملفات التوثيق:
+- CURSOR_AI_GUIDE.md
+- GITHUB_UPLOAD_GUIDE.md
+- PROJECT_SUMMARY.md
+
+## نصائح مهمة:
+
+1. تأكد من تثبيت Git
+2. تأكد من إنشاء حساب GitHub
+3. لا ترفع ملفات قاعدة البيانات
+4. استخدم .gitignore لحماية الملفات المهمة
+5. اختبر المشروع قبل النشر
+
+## الدعم:
+- البريد الإلكتروني: mfh1134@gmail.com
+- المطور: inkplus اينك بلس

@@ -2,6 +2,8 @@ def inject_store_settings():
     """حقن إعدادات المتجر في جميع القوالب"""
     try:
         from app.models.store_settings import store_settings
+        # إعادة تحميل الإعدادات للتأكد من الحصول على أحدث البيانات
+        store_settings.settings = store_settings.load_settings()
         return {
             'store_settings': store_settings.get_all_settings()
         }

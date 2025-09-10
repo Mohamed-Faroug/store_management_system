@@ -1,447 +1,567 @@
-# API Documentation - نظام إدارة المخزون
+# وثائق API - API Documentation
 
-## نظرة عامة
+## 📋 نظرة عامة
 
-هذا المستند يوضح واجهة البرمجة التطبيقية (API) لنظام إدارة المخزون والمبيعات. جميع الطلبات تستخدم JSON وتستجيب بـ JSON.
+نظام إدارة المخزون يوفر واجهة برمجية (API) شاملة للتفاعل مع جميع وظائف النظام.
 
-## Base URL
+## 🔗 Base URL
+
 ```
-http://localhost:5000
+http://localhost:5000/api
 ```
 
-## Authentication
+## 🔐 المصادقة
 
-جميع الطلبات تتطلب مصادقة باستخدام session cookies.
-
-### Login
+### تسجيل الدخول
 ```http
-POST /login
-Content-Type: application/x-www-form-urlencoded
+POST /api/auth/login
+Content-Type: application/json
 
-username=admin&password=admin123
+{
+    "username": "admin",
+    "password": "admin123"
+}
 ```
 
-### Logout
-```http
-GET /logout
-```
-
-## Endpoints
-
-### 1. إدارة الأصناف (Items)
-
-#### الحصول على قائمة الأصناف
-```http
-GET /items
-```
-
-**Response:**
+**الاستجابة:**
 ```json
 {
-  "success": true,
-  "items": [
-    {
-      "id": 1,
-      "name": "صنف 1",
-      "price": 100.0,
-      "quantity": 50,
-      "category_id": 1,
-      "barcode": "123456789"
+    "success": true,
+    "message": "تم تسجيل الدخول بنجاح",
+    "user": {
+        "id": 1,
+        "username": "admin",
+        "role": "manager"
+    },
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+### تسجيل الخروج
+```http
+POST /api/auth/logout
+Authorization: Bearer <token>
+```
+
+**الاستجابة:**
+```json
+{
+    "success": true,
+    "message": "تم تسجيل الخروج بنجاح"
+}
+```
+
+## 📦 الأصناف (Items)
+
+### الحصول على جميع الأصناف
+```http
+GET /api/items
+Authorization: Bearer <token>
+```
+
+**الاستجابة:**
+```json
+{
+    "success": true,
+    "items": [
+        {
+            "id": 1,
+            "name": "منتج 1",
+            "description": "وصف المنتج",
+            "category_id": 1,
+            "price": 100.0,
+            "cost": 80.0,
+            "stock_quantity": 50,
+            "min_stock_level": 10,
+            "barcode": "123456789",
+            "created_at": "2025-09-10T10:00:00Z"
+        }
+    ]
+}
+```
+
+### الحصول على صنف محدد
+```http
+GET /api/items/{id}
+Authorization: Bearer <token>
+```
+
+### إضافة صنف جديد
+```http
+POST /api/items
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "منتج جديد",
+    "description": "وصف المنتج",
+    "category_id": 1,
+    "price": 100.0,
+    "cost": 80.0,
+    "stock_quantity": 50,
+    "min_stock_level": 10,
+    "barcode": "123456789"
+}
+```
+
+### تحديث صنف
+```http
+PUT /api/items/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "منتج محدث",
+    "price": 120.0
+}
+```
+
+### حذف صنف
+```http
+DELETE /api/items/{id}
+Authorization: Bearer <token>
+```
+
+## 🏷️ الفئات (Categories)
+
+### الحصول على جميع الفئات
+```http
+GET /api/categories
+Authorization: Bearer <token>
+```
+
+### إضافة فئة جديدة
+```http
+POST /api/categories
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "فئة جديدة",
+    "description": "وصف الفئة"
+}
+```
+
+### تحديث فئة
+```http
+PUT /api/categories/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "فئة محدثة"
+}
+```
+
+### حذف فئة
+```http
+DELETE /api/categories/{id}
+Authorization: Bearer <token>
+```
+
+## 💰 المبيعات (Sales)
+
+### الحصول على جميع المبيعات
+```http
+GET /api/sales
+Authorization: Bearer <token>
+```
+
+### إضافة مبيعة جديدة
+```http
+POST /api/sales
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "customer_name": "عميل 1",
+    "items": [
+        {
+            "item_id": 1,
+            "quantity": 2,
+            "price": 100.0
+        }
+    ],
+    "payment_method": "cash",
+    "total_amount": 200.0
+}
+```
+
+### الحصول على مبيعة محددة
+```http
+GET /api/sales/{id}
+Authorization: Bearer <token>
+```
+
+## 📦 المشتريات (Purchases)
+
+### الحصول على جميع المشتريات
+```http
+GET /api/purchases
+Authorization: Bearer <token>
+```
+
+### إضافة مشتريات جديدة
+```http
+POST /api/purchases
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "supplier_name": "مورد 1",
+    "items": [
+        {
+            "item_id": 1,
+            "quantity": 10,
+            "cost": 80.0
+        }
+    ],
+    "payment_method": "cash",
+    "total_amount": 800.0
+}
+```
+
+## 📊 التقارير (Reports)
+
+### تقرير المبيعات اليومية
+```http
+GET /api/reports/sales/daily?date=2025-09-10
+Authorization: Bearer <token>
+```
+
+### تقرير المبيعات الشهرية
+```http
+GET /api/reports/sales/monthly?year=2025&month=9
+Authorization: Bearer <token>
+```
+
+### تقرير المبيعات السنوية
+```http
+GET /api/reports/sales/yearly?year=2025
+Authorization: Bearer <token>
+```
+
+### تقرير المخزون
+```http
+GET /api/reports/inventory
+Authorization: Bearer <token>
+```
+
+## 👥 المستخدمين (Users)
+
+### الحصول على جميع المستخدمين
+```http
+GET /api/users
+Authorization: Bearer <token>
+```
+
+### إضافة مستخدم جديد
+```http
+POST /api/users
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "username": "user1",
+    "password": "password123",
+    "role": "clerk"
+}
+```
+
+### تحديث مستخدم
+```http
+PUT /api/users/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "username": "user1_updated",
+    "role": "manager"
+}
+```
+
+### حذف مستخدم
+```http
+DELETE /api/users/{id}
+Authorization: Bearer <token>
+```
+
+## ⚙️ الإعدادات (Settings)
+
+### الحصول على إعدادات المتجر
+```http
+GET /api/settings/store
+Authorization: Bearer <token>
+```
+
+### تحديث إعدادات المتجر
+```http
+PUT /api/settings/store
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "store_name": "متجر جديد",
+    "address": "العنوان الجديد",
+    "phone": "0123456789",
+    "email": "store@example.com"
+}
+```
+
+### الحصول على طرق الدفع
+```http
+GET /api/settings/payment-methods
+Authorization: Bearer <token>
+```
+
+### إضافة طريقة دفع جديدة
+```http
+POST /api/settings/payment-methods
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "id": "new_method",
+    "name": "طريقة دفع جديدة",
+    "enabled": true
+}
+```
+
+### تحديث طريقة دفع
+```http
+PUT /api/settings/payment-methods/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "طريقة دفع محدثة",
+    "enabled": false
+}
+```
+
+### حذف طريقة دفع
+```http
+DELETE /api/settings/payment-methods/{id}
+Authorization: Bearer <token>
+```
+
+## 📈 الإحصائيات (Statistics)
+
+### إحصائيات عامة
+```http
+GET /api/statistics
+Authorization: Bearer <token>
+```
+
+**الاستجابة:**
+```json
+{
+    "success": true,
+    "statistics": {
+        "total_items": 150,
+        "total_sales": 2500.0,
+        "total_purchases": 1800.0,
+        "low_stock_items": 5,
+        "total_customers": 100,
+        "total_suppliers": 20
     }
-  ]
 }
 ```
 
-#### إضافة صنف جديد
+### إحصائيات المبيعات
 ```http
-POST /items/new
-Content-Type: application/x-www-form-urlencoded
-
-name=صنف جديد&price=150.0&quantity=25&category_id=1&barcode=987654321
+GET /api/statistics/sales?period=daily
+Authorization: Bearer <token>
 ```
 
-#### تحديث صنف
+### إحصائيات المخزون
 ```http
-POST /items/{item_id}/edit
-Content-Type: application/x-www-form-urlencoded
-
-name=صنف محدث&price=200.0&quantity=30
+GET /api/statistics/inventory
+Authorization: Bearer <token>
 ```
 
-#### حذف صنف
+## 🔍 البحث (Search)
+
+### البحث في الأصناف
 ```http
-POST /items/{item_id}/delete
+GET /api/search/items?q=منتج
+Authorization: Bearer <token>
 ```
 
-### 2. إدارة الفواتير (Invoices)
-
-#### الحصول على قائمة الفواتير
+### البحث في المبيعات
 ```http
-GET /invoices
+GET /api/search/sales?q=عميل
+Authorization: Bearer <token>
 ```
 
-**Query Parameters:**
-- `date`: تاريخ محدد (YYYY-MM-DD)
-- `customer`: اسم العميل
-- `invoice`: رقم الفاتورة
-
-**Response:**
-```json
-{
-  "success": true,
-  "invoices": [
-    {
-      "id": 1,
-      "invoice_number": "INV-001",
-      "customer_name": "عميل 1",
-      "total_amount": 500.0,
-      "payment_method": "cash",
-      "created_at": "2025-01-01 10:00:00"
-    }
-  ]
-}
-```
-
-#### إنشاء فاتورة جديدة
+### البحث في المشتريات
 ```http
-POST /invoices/new
-Content-Type: application/x-www-form-urlencoded
-
-customer_name=عميل جديد&customer_phone=123456789&payment_method=cash&items_data=[{"item_id":1,"quantity":2,"price":100}]
+GET /api/search/purchases?q=مورد
+Authorization: Bearer <token>
 ```
 
-#### عرض فاتورة
+## 📁 إدارة البيانات (Data Management)
+
+### تصدير البيانات
 ```http
-GET /invoices/{invoice_id}
+GET /api/data/export?type=all
+Authorization: Bearer <token>
 ```
 
-#### طباعة فاتورة A4
+### استيراد البيانات
 ```http
-GET /invoices/{invoice_id}/print
+POST /api/data/import
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <excel_file>
 ```
 
-#### طباعة فاتورة 58mm
+### إنشاء نسخة احتياطية
 ```http
-GET /invoices/{invoice_id}/print-58mm
+POST /api/data/backup
+Authorization: Bearer <token>
 ```
 
-### 3. إدارة المبيعات (Sales/POS)
-
-#### إنشاء عملية بيع
+### استعادة نسخة احتياطية
 ```http
-POST /sales/new
-Content-Type: application/x-www-form-urlencoded
+POST /api/data/restore
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
 
-items_data=[{"item_id":1,"quantity":1,"price":100}]&total_amount=100.0&payment_method=cash
+file: <backup_file>
 ```
 
-### 4. إدارة المشتريات (Purchases)
+## 🚨 رموز الحالة (Status Codes)
 
-#### الحصول على قائمة المشتريات
-```http
-GET /purchases
-```
+| الكود | المعنى | الوصف |
+|-------|--------|--------|
+| 200 | OK | الطلب نجح |
+| 201 | Created | تم إنشاء المورد |
+| 400 | Bad Request | طلب غير صحيح |
+| 401 | Unauthorized | غير مصرح |
+| 403 | Forbidden | ممنوع |
+| 404 | Not Found | غير موجود |
+| 500 | Internal Server Error | خطأ في الخادم |
 
-#### إنشاء عملية شراء
-```http
-POST /purchases/new
-Content-Type: application/x-www-form-urlencoded
-
-supplier_name=مورد 1&supplier_phone=123456789&payment_method=cash&items_data=[{"item_id":1,"quantity":10,"price":50}]
-```
-
-### 5. إدارة الفئات (Categories)
-
-#### الحصول على قائمة الفئات
-```http
-GET /categories
-```
-
-#### إضافة فئة جديدة
-```http
-POST /categories/new
-Content-Type: application/x-www-form-urlencoded
-
-name=فئة جديدة&description=وصف الفئة
-```
-
-### 6. إدارة المستخدمين (Users)
-
-#### الحصول على قائمة المستخدمين
-```http
-GET /users
-```
-
-#### إضافة مستخدم جديد
-```http
-POST /users/new
-Content-Type: application/x-www-form-urlencoded
-
-username=مستخدم جديد&password=كلمة المرور&role=clerk
-```
-
-#### تحديث مستخدم
-```http
-POST /users/{user_id}/edit
-Content-Type: application/x-www-form-urlencoded
-
-username=مستخدم محدث&password=كلمة مرور جديدة&role=manager
-```
-
-### 7. الإعدادات (Settings)
-
-#### إعدادات المتجر
-```http
-GET /settings/store
-POST /settings/api/store
-```
-
-#### إعدادات طرق الدفع
-```http
-GET /settings/payment-methods
-POST /settings/api/payment-methods
-PUT /settings/api/payment-methods/{method_id}
-DELETE /settings/api/payment-methods/{method_id}
-```
-
-#### إعدادات الضرائب
-```http
-GET /settings/tax
-POST /settings/api/tax
-```
-
-#### إعدادات العملات
-```http
-GET /settings/currency
-POST /settings/api/currency
-```
-
-### 8. التقارير (Reports)
-
-#### تقرير يومي
-```http
-GET /reports/daily?date=2025-01-01
-```
-
-#### تقرير شهري
-```http
-GET /reports/monthly?month=2025-01
-```
-
-#### تقرير سنوي
-```http
-GET /reports/yearly?year=2025
-```
-
-## Response Codes
-
-| Code | Description |
-|------|-------------|
-| 200 | OK - الطلب نجح |
-| 201 | Created - تم إنشاء المورد بنجاح |
-| 400 | Bad Request - خطأ في البيانات المرسلة |
-| 401 | Unauthorized - غير مصرح بالوصول |
-| 403 | Forbidden - ممنوع الوصول |
-| 404 | Not Found - المورد غير موجود |
-| 500 | Internal Server Error - خطأ في الخادم |
-
-## Error Response Format
-
-```json
-{
-  "success": false,
-  "message": "رسالة الخطأ",
-  "error_code": "ERROR_CODE"
-}
-```
-
-## Success Response Format
-
-```json
-{
-  "success": true,
-  "message": "تمت العملية بنجاح",
-  "data": {
-    // البيانات المطلوبة
-  }
-}
-```
-
-## Authentication Headers
-
-```http
-Cookie: session=your_session_cookie
-```
-
-## Rate Limiting
-
-- **الحد الأقصى:** 100 طلب في الدقيقة
-- **الحد الأقصى للفرد:** 10 طلبات في الثانية
-
-## Pagination
-
-للقوائم الطويلة، استخدم معاملات الصفحات:
-
-```http
-GET /items?page=1&per_page=20
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "items": [...],
-  "pagination": {
-    "page": 1,
-    "per_page": 20,
-    "total": 100,
-    "pages": 5
-  }
-}
-```
-
-## Filtering and Sorting
-
-### Filtering
-```http
-GET /items?category_id=1&price_min=100&price_max=500
-```
-
-### Sorting
-```http
-GET /items?sort_by=name&sort_order=asc
-```
-
-## Data Validation
-
-### Item Validation
-- `name`: مطلوب، نص، 1-100 حرف
-- `price`: مطلوب، رقم، أكبر من 0
-- `quantity`: مطلوب، رقم صحيح، أكبر من أو يساوي 0
-- `barcode`: اختياري، نص، فريد
-
-### Invoice Validation
-- `customer_name`: مطلوب، نص، 1-100 حرف
-- `customer_phone`: اختياري، نص، 10-15 رقم
-- `payment_method`: مطلوب، نص، من القائمة المحددة
-- `items`: مطلوب، مصفوفة، غير فارغة
-
-## Webhooks
-
-### Invoice Created
-```json
-{
-  "event": "invoice.created",
-  "data": {
-    "invoice_id": 123,
-    "invoice_number": "INV-001",
-    "total_amount": 500.0,
-    "created_at": "2025-01-01T10:00:00Z"
-  }
-}
-```
-
-### Low Stock Alert
-```json
-{
-  "event": "stock.low",
-  "data": {
-    "item_id": 456,
-    "item_name": "صنف 1",
-    "current_quantity": 5,
-    "minimum_quantity": 10
-  }
-}
-```
-
-## SDK Examples
+## 📝 أمثلة الاستخدام
 
 ### Python
 ```python
 import requests
 
-# Login
-session = requests.Session()
-login_data = {
+# تسجيل الدخول
+response = requests.post('http://localhost:5000/api/auth/login', json={
     'username': 'admin',
     'password': 'admin123'
-}
-session.post('http://localhost:5000/login', data=login_data)
+})
+token = response.json()['token']
 
-# Get items
-response = session.get('http://localhost:5000/items')
+# الحصول على الأصناف
+headers = {'Authorization': f'Bearer {token}'}
+response = requests.get('http://localhost:5000/api/items', headers=headers)
 items = response.json()['items']
-
-# Create invoice
-invoice_data = {
-    'customer_name': 'عميل جديد',
-    'payment_method': 'cash',
-    'items_data': '[{"item_id":1,"quantity":2,"price":100}]'
-}
-response = session.post('http://localhost:5000/invoices/new', data=invoice_data)
 ```
 
 ### JavaScript
 ```javascript
-// Login
-const loginData = new FormData();
-loginData.append('username', 'admin');
-loginData.append('password', 'admin123');
-
-fetch('/login', {
+// تسجيل الدخول
+const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
     method: 'POST',
-    body: loginData
-}).then(() => {
-    // Get items
-    return fetch('/items');
-}).then(response => response.json())
-.then(data => {
-    console.log(data.items);
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        username: 'admin',
+        password: 'admin123'
+    })
 });
+const { token } = await loginResponse.json();
+
+// الحصول على الأصناف
+const itemsResponse = await fetch('http://localhost:5000/api/items', {
+    headers: {
+        'Authorization': `Bearer ${token}`
+    }
+});
+const { items } = await itemsResponse.json();
 ```
 
-## Testing
-
-### Unit Tests
+### cURL
 ```bash
-pytest tests/
+# تسجيل الدخول
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+
+# الحصول على الأصناف
+curl -X GET http://localhost:5000/api/items \
+  -H "Authorization: Bearer <token>"
 ```
 
-### API Tests
-```bash
-pytest tests/api/
+## 🔒 الأمان
+
+### المصادقة
+- جميع الطلبات تتطلب مصادقة
+- استخدام JWT tokens
+- انتهاء صلاحية الرموز
+
+### التفويض
+- فحص الصلاحيات لكل طلب
+- أدوار مختلفة للمستخدمين
+- حماية من الوصول غير المصرح به
+
+### حماية البيانات
+- تشفير البيانات الحساسة
+- حماية من SQL Injection
+- التحقق من صحة البيانات
+
+## 📊 الحدود (Rate Limits)
+
+- **100 طلب/دقيقة** لكل مستخدم
+- **1000 طلب/ساعة** لكل مستخدم
+- **10000 طلب/يوم** لكل مستخدم
+
+## 🐛 معالجة الأخطاء
+
+### تنسيق الخطأ
+```json
+{
+    "success": false,
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "البيانات المدخلة غير صحيحة",
+        "details": {
+            "field": "name",
+            "message": "اسم المنتج مطلوب"
+        }
+    }
+}
 ```
 
-### Load Testing
-```bash
-# Install artillery
-npm install -g artillery
+### أنواع الأخطاء
+- **VALIDATION_ERROR**: خطأ في التحقق من البيانات
+- **AUTHENTICATION_ERROR**: خطأ في المصادقة
+- **AUTHORIZATION_ERROR**: خطأ في التفويض
+- **NOT_FOUND**: المورد غير موجود
+- **INTERNAL_ERROR**: خطأ داخلي
 
-# Run load test
-artillery run load-test.yml
-```
+## 📚 موارد إضافية
 
-## Changelog
+### الروابط المفيدة
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [REST API Best Practices](https://restfulapi.net/)
+- [HTTP Status Codes](https://httpstatuses.com/)
 
-### v1.0.0
-- إطلاق النسخة الأولى
-- جميع الـ endpoints الأساسية
-- نظام المصادقة
-- إدارة الأصناف والفواتير
-
-### v1.1.0
-- إضافة تقارير متقدمة
-- تحسين الأداء
-- إضافة webhooks
-
-## Support
-
-للحصول على الدعم:
-- **GitHub Issues:** [رابط GitHub]
-- **Email:** support@example.com
-- **Documentation:** [رابط الوثائق]
+### الأدوات المقترحة
+- [Postman](https://www.postman.com/) - اختبار API
+- [Insomnia](https://insomnia.rest/) - عميل REST
+- [curl](https://curl.se/) - أداة سطر الأوامر
 
 ---
 
-**تم إنشاء هذا المستند بواسطة:** محمد فاروق  
-**آخر تحديث:** 2025-01-01
+**آخر تحديث**: 10 سبتمبر 2025
+**الإصدار**: 1.0.0
+**المطور**: محمد فاروق
+
+*للمزيد من المعلومات، يرجى التواصل معنا على [mfh1134@gmail.com](mailto:mfh1134@gmail.com)*

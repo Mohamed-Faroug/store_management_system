@@ -1,170 +1,278 @@
 # دليل النشر - Deployment Guide
 
-## نظرة عامة
+## 📋 نظرة عامة
 
-هذا الدليل يوضح كيفية نشر نظام إدارة المخزون على خوادم الإنتاج المختلفة.
+هذا الدليل يوضح كيفية نشر نظام إدارة المخزون في بيئات مختلفة.
 
-## متطلبات النظام
+## 🖥️ النشر المحلي (Local Deployment)
 
-### الحد الأدنى
-- **CPU:** 1 core
-- **RAM:** 512 MB
-- **Storage:** 1 GB
-- **OS:** Linux (Ubuntu 20.04+), Windows Server 2019+, macOS 10.15+
+### المتطلبات
+- **Python 3.7+**
+- **Windows 10/11** (موصى به)
+- **متصفح ويب حديث**
 
-### الموصى به
-- **CPU:** 2+ cores
-- **RAM:** 2+ GB
-- **Storage:** 10+ GB SSD
-- **OS:** Ubuntu 22.04 LTS
+### الخطوات
 
-## طرق النشر
-
-### 1. النشر المحلي (Local Development)
-
-#### التثبيت
+#### 1. تحميل المشروع
 ```bash
-# استنساخ المشروع
-git clone https://github.com/yourusername/inventory-management-system.git
-cd inventory-management-system
+git clone https://github.com/Mohamed-Faroug/store_management_system.git
+cd store_management_system
+```
 
-# إنشاء بيئة افتراضية
+#### 2. إعداد البيئة الافتراضية
+```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# أو
 venv\Scripts\activate  # Windows
+# أو
+source venv/bin/activate  # Linux/Mac
+```
 
-# تثبيت المتطلبات
+#### 3. تثبيت المكتبات
+```bash
 pip install -r requirements.txt
+```
 
-# تشغيل التطبيق
+#### 4. تشغيل التطبيق
+```bash
+# الطريقة السهلة
+INSTALL_AND_RUN.bat
+
+# أو الطريقة المباشرة
 python run.py
 ```
 
-#### الوصول
-```
-http://localhost:5000
-```
+#### 5. الوصول للتطبيق
+- **الرابط**: http://localhost:5000
+- **بيانات الدخول**: admin/admin123
 
-### 2. النشر على خادم VPS
+## 🌐 النشر على الخادم (Server Deployment)
 
-#### إعداد الخادم (Ubuntu 22.04)
+### المتطلبات
+- **خادم Linux/Windows**
+- **Python 3.7+**
+- **Nginx** (اختياري)
+- **Gunicorn** (للإنتاج)
 
+### الخطوات
+
+#### 1. إعداد الخادم
 ```bash
 # تحديث النظام
 sudo apt update && sudo apt upgrade -y
 
-# تثبيت Python و pip
-sudo apt install python3 python3-pip python3-venv nginx -y
+# تثبيت Python
+sudo apt install python3 python3-pip python3-venv -y
 
-# تثبيت PostgreSQL (اختياري)
-sudo apt install postgresql postgresql-contrib -y
-
-# إنشاء مستخدم للتطبيق
-sudo adduser inventory
-sudo usermod -aG sudo inventory
+# تثبيت Git
+sudo apt install git -y
 ```
 
-#### إعداد التطبيق
-
+#### 2. تحميل المشروع
 ```bash
-# تسجيل الدخول كمستخدم inventory
-su - inventory
+git clone https://github.com/Mohamed-Faroug/store_management_system.git
+cd store_management_system
+```
 
-# استنساخ المشروع
-git clone https://github.com/yourusername/inventory-management-system.git
-cd inventory-management-system
-
-# إنشاء بيئة افتراضية
+#### 3. إعداد البيئة الافتراضية
+```bash
 python3 -m venv venv
 source venv/bin/activate
-
-# تثبيت المتطلبات
-pip install -r requirements.txt
-
-# إعداد متغيرات البيئة
-cp .env.example .env
-nano .env
 ```
 
-#### ملف .env
-```env
-FLASK_APP=run.py
-FLASK_ENV=production
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///inventory.db
-# أو لـ PostgreSQL:
-# DATABASE_URL=postgresql://username:password@localhost/inventory_db
-```
-
-#### إعداد Gunicorn
-
+#### 4. تثبيت المكتبات
 ```bash
-# تثبيت Gunicorn
+pip install -r requirements.txt
+pip install gunicorn
+```
+
+#### 5. إعداد قاعدة البيانات
+```bash
+python -c "from app.models.database import init_db; init_db()"
+```
+
+#### 6. تشغيل التطبيق
+```bash
+# للتطوير
+python run.py
+
+# للإنتاج
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
+```
+
+## 🐳 النشر باستخدام Docker
+
+### إنشاء Dockerfile
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "run:app"]
+```
+
+### إنشاء docker-compose.yml
+```yaml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./inventory.db:/app/inventory.db
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web
+    restart: unless-stopped
+```
+
+### تشغيل Docker
+```bash
+# بناء الصورة
+docker build -t store-management .
+
+# تشغيل الحاوية
+docker run -p 5000:5000 store-management
+
+# أو استخدام docker-compose
+docker-compose up -d
+```
+
+## ☁️ النشر على السحابة (Cloud Deployment)
+
+### Heroku
+
+#### 1. إعداد Heroku
+```bash
+# تثبيت Heroku CLI
+# تحميل من https://devcenter.heroku.com/articles/heroku-cli
+
+# تسجيل الدخول
+heroku login
+
+# إنشاء التطبيق
+heroku create store-management-system
+```
+
+#### 2. إعداد ملفات Heroku
+**Procfile:**
+```
+web: gunicorn -w 4 -b 0.0.0.0:$PORT run:app
+```
+
+**runtime.txt:**
+```
+python-3.9.7
+```
+
+#### 3. نشر التطبيق
+```bash
+git add .
+git commit -m "Deploy to Heroku"
+git push heroku main
+```
+
+### DigitalOcean
+
+#### 1. إنشاء Droplet
+- **نظام التشغيل**: Ubuntu 20.04
+- **الحجم**: 1GB RAM, 1 CPU
+- **التخزين**: 25GB SSD
+
+#### 2. إعداد الخادم
+```bash
+# تحديث النظام
+sudo apt update && sudo apt upgrade -y
+
+# تثبيت Python
+sudo apt install python3 python3-pip python3-venv -y
+
+# تثبيت Git
+sudo apt install git -y
+
+# تثبيت Nginx
+sudo apt install nginx -y
+```
+
+#### 3. نشر التطبيق
+```bash
+# تحميل المشروع
+git clone https://github.com/Mohamed-Faroug/store_management_system.git
+cd store_management_system
+
+# إعداد البيئة
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 pip install gunicorn
 
-# إنشاء ملف Gunicorn config
-nano gunicorn.conf.py
+# تشغيل التطبيق
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
 ```
 
-```python
-# gunicorn.conf.py
-bind = "127.0.0.1:8000"
-workers = 4
-worker_class = "sync"
-worker_connections = 1000
-timeout = 30
-keepalive = 2
-max_requests = 1000
-max_requests_jitter = 100
-preload_app = True
-```
+### AWS EC2
 
-#### إنشاء Systemd Service
+#### 1. إنشاء Instance
+- **نظام التشغيل**: Amazon Linux 2
+- **نوع المثيل**: t2.micro
+- **مفتاح الأمان**: إنشاء مفتاح جديد
 
+#### 2. إعداد الخادم
 ```bash
-sudo nano /etc/systemd/system/inventory.service
+# تحديث النظام
+sudo yum update -y
+
+# تثبيت Python
+sudo yum install python3 python3-pip -y
+
+# تثبيت Git
+sudo yum install git -y
 ```
 
-```ini
-[Unit]
-Description=Inventory Management System
-After=network.target
-
-[Service]
-User=inventory
-Group=inventory
-WorkingDirectory=/home/inventory/inventory-management-system
-Environment="PATH=/home/inventory/inventory-management-system/venv/bin"
-ExecStart=/home/inventory/inventory-management-system/venv/bin/gunicorn --config gunicorn.conf.py run:app
-ExecReload=/bin/kill -s HUP $MAINPID
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
+#### 3. نشر التطبيق
 ```bash
-# تفعيل الخدمة
-sudo systemctl daemon-reload
-sudo systemctl enable inventory
-sudo systemctl start inventory
-sudo systemctl status inventory
+# تحميل المشروع
+git clone https://github.com/Mohamed-Faroug/store_management_system.git
+cd store_management_system
+
+# إعداد البيئة
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn
+
+# تشغيل التطبيق
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
 ```
 
-#### إعداد Nginx
+## 🔧 إعداد Nginx
 
-```bash
-sudo nano /etc/nginx/sites-available/inventory
-```
-
+### ملف nginx.conf
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:5000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -172,225 +280,28 @@ server {
     }
 
     location /static {
-        alias /home/inventory/inventory-management-system/app/static;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    location /uploads {
-        alias /home/inventory/inventory-management-system/uploads;
+        alias /path/to/your/app/static;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 }
 ```
 
+### تفعيل Nginx
 ```bash
+# نسخ الملف
+sudo cp nginx.conf /etc/nginx/sites-available/store-management
+
 # تفعيل الموقع
-sudo ln -s /etc/nginx/sites-available/inventory /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
+sudo ln -s /etc/nginx/sites-available/store-management /etc/nginx/sites-enabled/
+
+# إعادة تشغيل Nginx
+sudo systemctl restart nginx
 ```
 
-### 3. النشر على Docker
+## 🔒 إعداد SSL
 
-#### إنشاء Dockerfile
-
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-
-# تعيين متغيرات البيئة
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# تعيين مجلد العمل
-WORKDIR /app
-
-# تثبيت متطلبات النظام
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# نسخ متطلبات Python
-COPY requirements.txt .
-
-# تثبيت متطلبات Python
-RUN pip install --no-cache-dir -r requirements.txt
-
-# نسخ الكود
-COPY . .
-
-# إنشاء مستخدم غير root
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
-USER appuser
-
-# فتح المنفذ
-EXPOSE 8000
-
-# تشغيل التطبيق
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "run:app"]
-```
-
-#### إنشاء docker-compose.yml
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-
-services:
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://inventory:password@db:5432/inventory_db
-    depends_on:
-      - db
-    volumes:
-      - ./uploads:/app/uploads
-      - ./inventory.db:/app/inventory.db
-
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=inventory_db
-      - POSTGRES_USER=inventory
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - web
-
-volumes:
-  postgres_data:
-```
-
-#### تشغيل Docker
-
-```bash
-# بناء الصور
-docker-compose build
-
-# تشغيل الخدمات
-docker-compose up -d
-
-# عرض السجلات
-docker-compose logs -f
-
-# إيقاف الخدمات
-docker-compose down
-```
-
-### 4. النشر على Heroku
-
-#### إعداد Heroku
-
-```bash
-# تثبيت Heroku CLI
-# https://devcenter.heroku.com/articles/heroku-cli
-
-# تسجيل الدخول
-heroku login
-
-# إنشاء تطبيق
-heroku create inventory-management-system
-
-# إعداد متغيرات البيئة
-heroku config:set FLASK_ENV=production
-heroku config:set SECRET_KEY=your-secret-key
-
-# إضافة قاعدة بيانات PostgreSQL
-heroku addons:create heroku-postgresql:hobby-dev
-
-# نشر التطبيق
-git push heroku main
-
-# تشغيل migrations
-heroku run python manage.py db upgrade
-```
-
-#### ملف Procfile
-
-```
-web: gunicorn run:app
-```
-
-### 5. النشر على AWS
-
-#### إعداد EC2 Instance
-
-```bash
-# إنشاء EC2 instance (Ubuntu 22.04)
-# Security Group: HTTP (80), HTTPS (443), SSH (22)
-
-# الاتصال بالخادم
-ssh -i your-key.pem ubuntu@your-ec2-ip
-
-# تثبيت Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker ubuntu
-
-# استنساخ المشروع
-git clone https://github.com/yourusername/inventory-management-system.git
-cd inventory-management-system
-
-# تشغيل Docker Compose
-docker-compose up -d
-```
-
-#### إعداد RDS (PostgreSQL)
-
-```bash
-# إنشاء RDS instance
-# Engine: PostgreSQL
-# Instance class: db.t3.micro
-# Storage: 20 GB
-# Security group: Allow inbound on port 5432
-
-# تحديث DATABASE_URL
-export DATABASE_URL=postgresql://username:password@your-rds-endpoint:5432/inventory_db
-```
-
-### 6. النشر على DigitalOcean
-
-#### إعداد Droplet
-
-```bash
-# إنشاء Droplet (Ubuntu 22.04)
-# Size: 1GB RAM, 1 CPU
-# Region: Choose closest to your users
-
-# الاتصال بالخادم
-ssh root@your-droplet-ip
-
-# تثبيت Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-# إعداد التطبيق
-git clone https://github.com/yourusername/inventory-management-system.git
-cd inventory-management-system
-docker-compose up -d
-```
-
-## إعداد SSL/HTTPS
-
-### باستخدام Let's Encrypt
-
+### Let's Encrypt
 ```bash
 # تثبيت Certbot
 sudo apt install certbot python3-certbot-nginx -y
@@ -403,239 +314,195 @@ sudo crontab -e
 # إضافة: 0 12 * * * /usr/bin/certbot renew --quiet
 ```
 
-### باستخدام Cloudflare
+## 📊 مراقبة الأداء
 
-1. أضف دومينك إلى Cloudflare
-2. غيّر nameservers
-3. فعّل SSL/TLS
-4. فعّل "Always Use HTTPS"
-
-## النسخ الاحتياطي
-
-### نسخ احتياطي لقاعدة البيانات
-
+### PM2 (Process Manager)
 ```bash
-# SQLite
-cp inventory.db backup/inventory_$(date +%Y%m%d_%H%M%S).db
+# تثبيت PM2
+npm install -g pm2
 
-# PostgreSQL
-pg_dump inventory_db > backup/inventory_$(date +%Y%m%d_%H%M%S).sql
+# تشغيل التطبيق
+pm2 start gunicorn --name "store-management" -- -w 4 -b 0.0.0.0:5000 run:app
+
+# حفظ الإعدادات
+pm2 save
+pm2 startup
 ```
 
-### نسخ احتياطي للملفات
-
+### مراقبة النظام
 ```bash
-# إنشاء نسخة احتياطية
-tar -czf backup_$(date +%Y%m%d_%H%M%S).tar.gz \
-    inventory.db \
-    uploads/ \
-    *.json
+# مراقبة العمليات
+pm2 monit
 
-# رفع إلى S3
-aws s3 cp backup_$(date +%Y%m%d_%H%M%S).tar.gz s3://your-backup-bucket/
+# مراقبة السجلات
+pm2 logs
+
+# إعادة تشغيل التطبيق
+pm2 restart store-management
 ```
 
-### سكريبت النسخ الاحتياطي التلقائي
+## 🔄 النسخ الاحتياطية
 
+### نسخ احتياطية تلقائية
 ```bash
 #!/bin/bash
 # backup.sh
 
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/home/inventory/backups"
-APP_DIR="/home/inventory/inventory-management-system"
+BACKUP_DIR="/backups"
+APP_DIR="/path/to/your/app"
 
-# إنشاء مجلد النسخ الاحتياطي
+# إنشاء مجلد النسخ الاحتياطية
 mkdir -p $BACKUP_DIR
 
 # نسخ قاعدة البيانات
 cp $APP_DIR/inventory.db $BACKUP_DIR/inventory_$DATE.db
 
-# نسخ الملفات
-tar -czf $BACKUP_DIR/files_$DATE.tar.gz -C $APP_DIR uploads/ *.json
+# نسخ الملفات المرفوعة
+cp -r $APP_DIR/uploads $BACKUP_DIR/uploads_$DATE
 
-# حذف النسخ القديمة (أكثر من 30 يوم)
-find $BACKUP_DIR -name "*.db" -mtime +30 -delete
-find $BACKUP_DIR -name "*.tar.gz" -mtime +30 -delete
+# ضغط النسخة الاحتياطية
+tar -czf $BACKUP_DIR/backup_$DATE.tar.gz $BACKUP_DIR/inventory_$DATE.db $BACKUP_DIR/uploads_$DATE
 
-echo "Backup completed: $DATE"
+# حذف الملفات المؤقتة
+rm $BACKUP_DIR/inventory_$DATE.db
+rm -rf $BACKUP_DIR/uploads_$DATE
+
+# حذف النسخ القديمة (أكثر من 7 أيام)
+find $BACKUP_DIR -name "backup_*.tar.gz" -mtime +7 -delete
+
+echo "Backup completed: backup_$DATE.tar.gz"
 ```
 
+### جدولة النسخ الاحتياطية
 ```bash
 # إضافة إلى crontab
 crontab -e
-# إضافة: 0 2 * * * /home/inventory/backup.sh
+
+# نسخ احتياطية يومية في الساعة 2 صباحاً
+0 2 * * * /path/to/backup.sh
 ```
 
-## المراقبة والمراجعة
-
-### مراقبة الأداء
-
-```bash
-# مراقبة استخدام الموارد
-htop
-iostat -x 1
-df -h
-
-# مراقبة التطبيق
-sudo journalctl -u inventory -f
-tail -f /var/log/nginx/access.log
-```
-
-### إعدادات المراقبة
-
-```python
-# monitoring.py
-import psutil
-import time
-import logging
-
-def monitor_system():
-    cpu_percent = psutil.cpu_percent()
-    memory = psutil.virtual_memory()
-    disk = psutil.disk_usage('/')
-    
-    logging.info(f"CPU: {cpu_percent}%, Memory: {memory.percent}%, Disk: {disk.percent}%")
-    
-    if cpu_percent > 80:
-        logging.warning("High CPU usage detected")
-    if memory.percent > 80:
-        logging.warning("High memory usage detected")
-    if disk.percent > 90:
-        logging.critical("Low disk space detected")
-```
-
-## استكشاف الأخطاء
+## 🚨 استكشاف الأخطاء
 
 ### مشاكل شائعة
 
-1. **خطأ في الاتصال بقاعدة البيانات**
-   ```bash
-   # تحقق من حالة PostgreSQL
-   sudo systemctl status postgresql
-   
-   # تحقق من الاتصال
-   psql -h localhost -U inventory -d inventory_db
-   ```
+#### خطأ في المنفذ
+```
+Address already in use
+```
+**الحل:**
+```bash
+# البحث عن العملية
+lsof -i :5000
 
-2. **خطأ في الصلاحيات**
-   ```bash
-   # إصلاح صلاحيات الملفات
-   sudo chown -R inventory:inventory /home/inventory/inventory-management-system
-   sudo chmod -R 755 /home/inventory/inventory-management-system
-   ```
+# إنهاء العملية
+kill -9 <PID>
+```
 
-3. **خطأ في الذاكرة**
-   ```bash
-   # زيادة swap
-   sudo fallocate -l 2G /swapfile
-   sudo chmod 600 /swapfile
-   sudo mkswap /swapfile
-   sudo swapon /swapfile
-   ```
+#### خطأ في الصلاحيات
+```
+Permission denied
+```
+**الحل:**
+```bash
+# تغيير صلاحيات الملفات
+chmod +x run.py
+chmod 755 app/
+```
+
+#### خطأ في قاعدة البيانات
+```
+Database is locked
+```
+**الحل:**
+```bash
+# إعادة تشغيل التطبيق
+pm2 restart store-management
+```
 
 ### سجلات الأخطاء
-
 ```bash
 # سجلات التطبيق
-sudo journalctl -u inventory -n 100
+tail -f /var/log/store-management.log
 
 # سجلات Nginx
-sudo tail -f /var/log/nginx/error.log
+tail -f /var/log/nginx/error.log
 
 # سجلات النظام
-sudo dmesg | tail
+journalctl -u store-management
 ```
 
-## التحديثات
+## 📈 تحسين الأداء
 
-### تحديث التطبيق
-
-```bash
-# إيقاف الخدمة
-sudo systemctl stop inventory
-
-# نسخ احتياطي
-./backup.sh
-
-# تحديث الكود
-git pull origin main
-
-# تثبيت المتطلبات الجديدة
-source venv/bin/activate
-pip install -r requirements.txt
-
-# تشغيل migrations (إذا لزم الأمر)
-python manage.py db upgrade
-
-# إعادة تشغيل الخدمة
-sudo systemctl start inventory
+### تحسين قاعدة البيانات
+```python
+# إضافة فهارس
+CREATE INDEX idx_items_name ON items(name);
+CREATE INDEX idx_sales_date ON sales(created_at);
+CREATE INDEX idx_purchases_date ON purchases(created_at);
 ```
 
-### تحديث النظام
+### تحسين التطبيق
+```python
+# إعدادات Gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 --worker-class gevent --worker-connections 1000 run:app
+```
 
+### تحسين Nginx
+```nginx
+# ضغط الملفات
+gzip on;
+gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+# ذاكرة التخزين المؤقت
+location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+## 🔐 الأمان
+
+### إعدادات الأمان
+```python
+# في config.py
+SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
+DEBUG = False
+```
+
+### حماية الخادم
 ```bash
 # تحديث النظام
 sudo apt update && sudo apt upgrade -y
 
-# إعادة تشغيل الخادم
-sudo reboot
-```
+# تثبيت UFW
+sudo apt install ufw -y
 
-## الأمان
-
-### إعدادات الأمان الأساسية
-
-```bash
-# تحديث النظام
-sudo apt update && sudo apt upgrade -y
-
-# إعداد firewall
-sudo ufw enable
-sudo ufw allow ssh
+# إعداد الجدار الناري
+sudo ufw allow 22
 sudo ufw allow 80
 sudo ufw allow 443
-
-# تعطيل تسجيل الدخول بـ root
-sudo nano /etc/ssh/sshd_config
-# PermitRootLogin no
-sudo systemctl restart ssh
-
-# إعداد fail2ban
-sudo apt install fail2ban -y
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
+sudo ufw enable
 ```
 
-### إعدادات Flask الأمنية
+## 📞 الدعم
 
-```python
-# config.py
-import os
+### معلومات التواصل
+- **البريد الإلكتروني**: [mfh1134@gmail.com](mailto:mfh1134@gmail.com)
+- **GitHub**: [@Mohamed-Faroug](https://github.com/Mohamed-Faroug)
+- **المستودع**: [store_management_system](https://github.com/Mohamed-Faroug/store_management_system)
 
-class ProductionConfig:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///inventory.db'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
-    # إعدادات الأمان
-    SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
-    
-    # إعدادات CSRF
-    WTF_CSRF_ENABLED = True
-    WTF_CSRF_TIME_LIMIT = 3600
-```
-
-## الدعم
-
-للحصول على الدعم في النشر:
-- **GitHub Issues:** [رابط GitHub]
-- **Email:** support@example.com
-- **Documentation:** [رابط الوثائق]
+### طلب المساعدة
+1. تحقق من سجلات الأخطاء
+2. راجع هذا الدليل
+3. ابحث في Issues على GitHub
+4. تواصل مع المطور
 
 ---
 
-**تم إنشاء هذا الدليل بواسطة:** محمد فاروق  
-**آخر تحديث:** 2025-01-01
+**آخر تحديث**: 10 سبتمبر 2025
+**الإصدار**: 1.0.0
+**المطور**: محمد فاروق
+
+*هذا الدليل يغطي جميع طرق النشر الشائعة. للمزيد من المعلومات، يرجى التواصل معنا.*

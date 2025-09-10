@@ -6,6 +6,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash
 from ..models.database import get_db
+from ..models.store_settings import store_settings
 
 bp = Blueprint('auth', __name__)
 
@@ -25,7 +26,9 @@ def login():
             return redirect(request.args.get('next') or url_for('main.index'))
         flash('بيانات الدخول غير صحيحة.', 'danger')
     
-    return render_template('login.html')
+    # تحميل إعدادات المتجر
+    store_settings_data = store_settings.get_all_settings()
+    return render_template('login.html', store_settings=store_settings_data)
 
 @bp.route('/logout')
 def logout():

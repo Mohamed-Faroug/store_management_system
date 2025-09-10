@@ -36,7 +36,19 @@ class Config:
     
     # إعدادات النظام
     APP_NAME = 'نظام إدارة المخزون - مخزن الزينة'
+    STORE_NAME = 'مخزن الزينة'
     VERSION = '1.0.0'
+    
+    # معلومات التواصل
+    SUPPORT_EMAIL = 'mfh1134@gmail.com'
+    DEVELOPER_NAME = 'inkplus اينك بلس'
+    DEVELOPER_EMAIL = 'mfh1134@gmail.com'
+    
+    # إعدادات URL
+    BASE_URL = 'http://localhost'
+    LOCAL_URL = 'http://localhost'
+    BASE_URL_WITH_PORT = 'http://localhost:5000'
+    LOCAL_URL_WITH_PORT = 'http://localhost:5000'
     
     @staticmethod
     def init_app(app):

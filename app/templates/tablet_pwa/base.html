@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="مخزن الزينة">
+    <meta name="apple-mobile-web-app-title" content="{{ store_settings.store_name or 'مخزن الزينة' }}">
     
-    <title>{% block title %}نظام إدارة المخزون - مخزن الزينة{% endblock %}</title>
+    <title>{% block title %}{{ store_settings.app_name or 'نظام إدارة المخزون - مخزن الزينة' }}{% endblock %}</title>
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -463,7 +463,7 @@
     <div class="pwa-container">
         <div class="pwa-header">
             <h1 class="pwa-title">{% block header_title %}نظام إدارة المخزون{% endblock %}</h1>
-            <p class="pwa-subtitle">{% block header_subtitle %}مخزن الزينة - تطبيق التابلت{% endblock %}</p>
+            <p class="pwa-subtitle">{% block header_subtitle %}{{ store_settings.store_name or 'مخزن الزينة' }} - تطبيق التابلت{% endblock %}</p>
         </div>
         
         <div class="pwa-content">

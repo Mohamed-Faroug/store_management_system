@@ -4,7 +4,7 @@
 نظام إدارة المخزون - مخزن الزينة
 ملف التشغيل الرئيسي
 
-المطور: محمد فاروق
+المطور: inkplus اينك بلس
 التاريخ: 10/9/2025
 """
 
@@ -19,6 +19,9 @@ def main():
     print("=" * 50)
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("🚀 جاري التشغيل...")
+    print("📱 http://localhost")
+    print("📱 http://localhost:5000")
+    print("📱 http://127.0.0.1")
     print("📱 http://127.0.0.1:5000")
     print("⏹️  Ctrl+C للإيقاف")
     print("=" * 50)
@@ -31,8 +34,8 @@ def main():
         from app import create_app
         app = create_app()
         
-        # تشغيل التطبيق
-        app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)
+        # تشغيل التطبيق على المنفذ 5000
+        app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
         
     except KeyboardInterrupt:
         print("\n⏹️  تم الإيقاف")
