@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-cash-register me-2"></i>إعدادات نقطة البيع (POS)</h2>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة للرئيسية
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>إعدادات نقطة البيع</h5>
+                </div>
+                <div class="card-body">
+                    <form id="pos-settings-form">
+                        <!-- إعدادات عامة -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">الإعدادات العامة</h6>
+                            </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="pos_enabled" name="pos_enabled" 
+                                       {{ 'checked' if pos_settings.get('pos_enabled', True) else '' }}>
+                                <label class="form-check-label" for="pos_enabled">
+                                    <strong>تفعيل نقطة البيع</strong>
+                                </label>
+                            </div>
+                        </div>
+                        </div>
+                        
+                        <!-- إعدادات الطابعة -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">إعدادات الطابعة</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="printer_enabled" name="receipt_printer.enabled" 
+                                           {{ 'checked' if pos_settings.get('receipt_printer', {}).get('enabled', True) else '' }}>
+                                    <label class="form-check-label" for="printer_enabled">
+                                        تفعيل طباعة الإيصالات
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="paper_size" class="form-label">حجم الورق</label>
+                                <select class="form-select" id="paper_size" name="receipt_printer.paper_size">
+                                    <option value="58mm" {{ 'selected' if pos_settings.get('receipt_printer', {}).get('paper_size', '58mm') == '58mm' else '' }}>58 مم</option>
+                                    <option value="80mm" {{ 'selected' if pos_settings.get('receipt_printer', {}).get('paper_size', '58mm') == '80mm' else '' }}>80 مم</option>
+                                    <option value="A4" {{ 'selected' if pos_settings.get('receipt_printer', {}).get('paper_size', '58mm') == 'A4' else '' }}>A4</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="auto_print" name="receipt_printer.auto_print" 
+                                           {{ 'checked' if pos_settings.get('receipt_printer', {}).get('auto_print', True) else '' }}>
+                                    <label class="form-check-label" for="auto_print">
+                                        طباعة تلقائية عند إنهاء البيع
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- إعدادات العرض -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">إعدادات العرض</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="show_tax" name="display_settings.show_tax" 
+                                           {{ 'checked' if pos_settings.get('display_settings', {}).get('show_tax', True) else '' }}>
+                                    <label class="form-check-label" for="show_tax">
+                                        إظهار الضريبة
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="show_discount" name="display_settings.show_discount" 
+                                           {{ 'checked' if pos_settings.get('display_settings', {}).get('show_discount', True) else '' }}>
+                                    <label class="form-check-label" for="show_discount">
+                                        إظهار الخصم
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="show_payment_method" name="display_settings.show_payment_method" 
+                                           {{ 'checked' if pos_settings.get('display_settings', {}).get('show_payment_method', True) else '' }}>
+                                    <label class="form-check-label" for="show_payment_method">
+                                        إظهار طريقة الدفع
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="show_customer_info" name="display_settings.show_customer_info" 
+                                           {{ 'checked' if pos_settings.get('display_settings', {}).get('show_customer_info', True) else '' }}>
+                                    <label class="form-check-label" for="show_customer_info">
+                                        إظهار معلومات العميل
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ساعات العمل -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">ساعات العمل</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="business_hours_enabled" name="business_hours.enabled" 
+                                           {{ 'checked' if pos_settings.get('business_hours', {}).get('enabled', False) else '' }}>
+                                    <label class="form-check-label" for="business_hours_enabled">
+                                        تفعيل ساعات العمل
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="start_time" class="form-label">ساعة البداية</label>
+                                <input type="time" class="form-control" id="start_time" name="business_hours.start_time" 
+                                       value="{{ pos_settings.get('business_hours', {}).get('start_time', '08:00') }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="end_time" class="form-label">ساعة النهاية</label>
+                                <input type="time" class="form-control" id="end_time" name="business_hours.end_time" 
+                                       value="{{ pos_settings.get('business_hours', {}).get('end_time', '22:00') }}">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>حفظ الإعدادات
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetPOSSettings()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-eye me-2"></i>معاينة الإيصال</h5>
+                </div>
+                <div class="card-body">
+                    <div class="receipt-preview">
+                        <div class="text-center mb-3">
+                            <h6>معاينة الإيصال</h6>
+                        </div>
+                        <div class="border rounded p-3" style="font-family: monospace; font-size: 12px;">
+                            <div class="text-center mb-2">
+                                <strong>مخزن الزينة</strong><br>
+                                <small>شارع الملك فيصل، الرياض</small><br>
+                                <small>هاتف: +966 50 123 4567</small>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span>فاتورة رقم:</span>
+                                <span>#12345</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>التاريخ:</span>
+                                <span id="preview_date">2025-01-09 14:30</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>العميل:</span>
+                                <span>أحمد محمد</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span>منتج 1</span>
+                                <span>50.00 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>منتج 2</span>
+                                <span>30.00 ر.س</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span>المجموع الفرعي:</span>
+                                <span>80.00 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between" id="preview_tax_row" style="display: none;">
+                                <span>الضريبة (15%):</span>
+                                <span>12.00 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between" id="preview_discount_row" style="display: none;">
+                                <span>الخصم:</span>
+                                <span>5.00 ر.س</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>المجموع النهائي:</span>
+                                <span>80.00 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between" id="preview_payment_row" style="display: none;">
+                                <span>طريقة الدفع:</span>
+                                <span>نقدي</span>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <small>شكراً لزيارتكم</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات النظام</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>حالة نقطة البيع:</strong><br>
+                            <span id="preview_pos_status" class="badge bg-success">{{ 'مفعلة' if pos_settings.get('pos_enabled', True) else 'معطلة' }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>الطابعة:</strong><br>
+                            <span id="preview_printer_status">{{ 'مفعلة' if pos_settings.get('receipt_printer', {}).get('enabled', True) else 'معطلة' }} - {{ pos_settings.get('receipt_printer', {}).get('paper_size', '58mm') }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>ساعات العمل:</strong><br>
+                            <span id="preview_business_hours">{{ pos_settings.get('business_hours', {}).get('start_time', '08:00') }} - {{ pos_settings.get('business_hours', {}).get('end_time', '22:00') }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث المعاينة عند تغيير الحقول
+    const formFields = document.querySelectorAll('#pos-settings-form input, #pos-settings-form select');
+    formFields.forEach(field => {
+        field.addEventListener('input', updatePOSPreview);
+        field.addEventListener('change', updatePOSPreview);
+    });
+    
+    // معالجة إرسال النموذج
+    document.getElementById('pos-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        savePOSSettings();
+    });
+    
+    // تحديث المعاينة الأولية
+    updatePOSPreview();
+});
+
+function updatePOSPreview() {
+    const posEnabled = document.getElementById('pos_enabled')?.checked || false;
+    const printerEnabled = document.getElementById('printer_enabled')?.checked || false;
+    const paperSize = document.getElementById('paper_size')?.value || '58mm';
+    const showTax = document.getElementById('show_tax')?.checked || false;
+    const showDiscount = document.getElementById('show_discount')?.checked || false;
+    const showPaymentMethod = document.getElementById('show_payment_method')?.checked || false;
+    const businessHoursEnabled = document.getElementById('business_hours_enabled')?.checked || false;
+    const startTime = document.getElementById('start_time')?.value || '08:00';
+    const endTime = document.getElementById('end_time')?.value || '22:00';
+    
+    // تحديث حالة نقطة البيع
+    const posStatusEl = document.getElementById('preview_pos_status');
+    if (posStatusEl) {
+        posStatusEl.textContent = posEnabled ? 'مفعلة' : 'معطلة';
+        posStatusEl.className = `badge ${posEnabled ? 'bg-success' : 'bg-danger'}`;
+    }
+    
+    // تحديث حالة الطابعة
+    const printerStatusEl = document.getElementById('preview_printer_status');
+    if (printerStatusEl) {
+        printerStatusEl.textContent = printerEnabled ? `مفعلة - ${paperSize}` : 'معطلة';
+    }
+    
+    // تحديث ساعات العمل
+    const businessHoursEl = document.getElementById('preview_business_hours');
+    if (businessHoursEl) {
+        businessHoursEl.textContent = businessHoursEnabled ? `${startTime} - ${endTime}` : 'غير محددة';
+    }
+    
+    // تحديث معاينة الإيصال
+    const taxRowEl = document.getElementById('preview_tax_row');
+    if (taxRowEl) {
+        taxRowEl.style.display = showTax ? 'flex' : 'none';
+    }
+    
+    const discountRowEl = document.getElementById('preview_discount_row');
+    if (discountRowEl) {
+        discountRowEl.style.display = showDiscount ? 'flex' : 'none';
+    }
+    
+    const paymentRowEl = document.getElementById('preview_payment_row');
+    if (paymentRowEl) {
+        paymentRowEl.style.display = showPaymentMethod ? 'flex' : 'none';
+    }
+    
+    // تحديث التاريخ
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 19).replace('T', ' ');
+    const dateEl = document.getElementById('preview_date');
+    if (dateEl) {
+        dateEl.textContent = dateStr;
+    }
+}
+
+async function savePOSSettings() {
+    // إنشاء البيانات مباشرة من العناصر
+    const data = {
+        pos_enabled: document.getElementById('pos_enabled').checked,
+        receipt_printer: {
+            enabled: document.getElementById('printer_enabled').checked,
+            paper_size: document.getElementById('paper_size').value,
+            auto_print: document.getElementById('auto_print').checked
+        },
+        display_settings: {
+            show_tax: document.getElementById('show_tax').checked,
+            show_discount: document.getElementById('show_discount').checked,
+            show_payment_method: document.getElementById('show_payment_method').checked,
+            show_customer_info: document.getElementById('show_customer_info').checked
+        },
+        business_hours: {
+            enabled: document.getElementById('business_hours_enabled').checked,
+            start_time: document.getElementById('start_time').value,
+            end_time: document.getElementById('end_time').value
+        }
+    };
+    
+    console.log('Sending POS data:', data);
+    
+    // إظهار مؤشر التحميل
+    const submitBtn = document.querySelector('#pos-settings-form button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>جاري الحفظ...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/settings/api/pos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Response data:', result);
+        
+        if (result.success) {
+            showNotification('تم حفظ إعدادات نقطة البيع بنجاح!', 'success');
+            // تحديث المعاينة
+            updatePOSPreview();
+        } else {
+            showNotification('خطأ في حفظ الإعدادات: ' + (result.message || 'خطأ غير معروف'), 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving POS settings:', error);
+        showNotification('خطأ في الاتصال بالخادم: ' + error.message, 'danger');
+    } finally {
+        // إعادة تعيين الزر
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+async function resetPOSSettings() {
+    if (confirm('هل أنت متأكد من إعادة تعيين إعدادات نقطة البيع إلى القيم الافتراضية؟')) {
+        try {
+            const response = await fetch('/settings/api/pos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pos_enabled: true,
+                    receipt_printer: {
+                        enabled: true,
+                        paper_size: '58mm',
+                        auto_print: true
+                    },
+                    display_settings: {
+                        show_tax: true,
+                        show_discount: true,
+                        show_payment_method: true,
+                        show_customer_info: true
+                    },
+                    business_hours: {
+                        enabled: false,
+                        start_time: '08:00',
+                        end_time: '22:00'
+                    }
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('تم إعادة تعيين إعدادات نقطة البيع بنجاح!', 'success');
+                location.reload();
+            } else {
+                showNotification('خطأ في إعادة تعيين الإعدادات: ' + result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error resetting POS settings:', error);
+            showNotification('خطأ في الاتصال بالخادم', 'danger');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

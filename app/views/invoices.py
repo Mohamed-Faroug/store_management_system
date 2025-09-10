@@ -5,7 +5,9 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..models.database import get_db, now_str
-from ..utils.auth import login_required
+from ..models.settings_models import tax_settings, payment_method_settings, currency_settings
+from ..utils.auth import login_required, dev_user_required
+from ..utils.payment_utils import get_payment_method_display_name
 
 bp = Blueprint('invoices', __name__)
 
@@ -47,8 +49,15 @@ def list():
     
     invoices = db.execute(query, params).fetchall()
     
+    # إضافة أسماء طرق الدفع للفواتير
+    invoices_with_payment_names = []
+    for invoice in invoices:
+        invoice_dict = dict(invoice)
+        invoice_dict['payment_method_name'] = get_payment_method_display_name(invoice['payment_method'])
+        invoices_with_payment_names.append(invoice_dict)
+    
     return render_template('invoices/list.html', 
-                         invoices=invoices, 
+                         invoices=invoices_with_payment_names, 
                          search_date=search_date,
                          search_customer=search_customer,
                          search_invoice=search_invoice)
@@ -121,7 +130,17 @@ def new():
     
     db = get_db()
     items = db.execute('SELECT * FROM items WHERE quantity > 0 ORDER BY name').fetchall()
-    return render_template('invoices/new.html', items=items)
+    
+    # Load settings for the form
+    payment_methods = payment_method_settings.get_enabled_methods()
+    tax_config = tax_settings.get_all_settings()
+    currency_config = currency_settings.get_default_currency()
+    
+    return render_template('invoices/new.html', 
+                         items=items, 
+                         payment_methods=payment_methods,
+                         tax_config=tax_config,
+                         currency_config=currency_config)
 
 @bp.route('/invoices/<int:invoice_id>')
 @login_required()
@@ -148,13 +167,13 @@ def view(invoice_id):
         ORDER BY s.id
     ''', (invoice_id,)).fetchall()
     
-    print(f"Debug: Invoice ID: {invoice_id}")
-    print(f"Debug: Invoice data: {dict(invoice) if invoice else 'None'}")
-    print(f"Debug: Items count: {len(items)}")
-    for item in items:
-        print(f"Debug: Item: {dict(item)}")
+    # الحصول على اسم طريقة الدفع
+    payment_method_name = get_payment_method_display_name(invoice['payment_method'])
     
-    return render_template('invoices/view.html', invoice=invoice, items=items)
+    return render_template('invoices/view.html', 
+                         invoice=invoice, 
+                         items=items, 
+                         payment_method_name=payment_method_name)
 
 @bp.route('/invoices/<int:invoice_id>/print')
 @login_required()
@@ -180,7 +199,13 @@ def print_invoice(invoice_id):
         ORDER BY s.id
     ''', (invoice_id,)).fetchall()
     
-    return render_template('invoices/print_a4.html', invoice=invoice, items=items)
+    # الحصول على اسم طريقة الدفع
+    payment_method_name = get_payment_method_display_name(invoice['payment_method'])
+    
+    return render_template('invoices/print_a4.html', 
+                         invoice=invoice, 
+                         items=items, 
+                         payment_method_name=payment_method_name)
 
 @bp.route('/invoices/<int:invoice_id>/print-58mm')
 @login_required()
@@ -206,15 +231,18 @@ def print_invoice_58mm(invoice_id):
         ORDER BY s.id
     ''', (invoice_id,)).fetchall()
     
-    return render_template('invoices/print_58mm.html', invoice=invoice, items=items)
+    # الحصول على اسم طريقة الدفع
+    payment_method_name = get_payment_method_display_name(invoice['payment_method'])
+    
+    return render_template('invoices/print_58mm.html', 
+                         invoice=invoice, 
+                         items=items, 
+                         payment_method_name=payment_method_name)
 
 @bp.route('/api/invoices/<int:invoice_id>/data')
-@login_required()
+@dev_user_required
 def get_invoice_data(invoice_id):
-    """جلب بيانات الفاتورة كـ JSON - للمدير فقط"""
-    if session.get('role') != 'manager':
-        from flask import jsonify
-        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    """جلب بيانات الفاتورة كـ JSON - لمستخدم dev فقط"""
     from flask import jsonify
     
     try:
@@ -256,12 +284,9 @@ def get_invoice_data(invoice_id):
         return jsonify({'error': f'خطأ في جلب البيانات: {str(e)}'}), 500
 
 @bp.route('/api/invoices/export')
-@login_required()
+@dev_user_required
 def export_invoices():
-    """تصدير جميع الفواتير كـ JSON - للمدير فقط"""
-    if session.get('role') != 'manager':
-        from flask import jsonify
-        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    """تصدير جميع الفواتير كـ JSON - لمستخدم dev فقط"""
     from flask import jsonify
     
     try:
@@ -321,31 +346,22 @@ def export_invoices():
         return jsonify({'error': f'خطأ في تصدير البيانات: {str(e)}'}), 500
 
 @bp.route('/invoices/export-page')
-@login_required()
+@dev_user_required
 def export_page():
-    """صفحة تصدير البيانات - للمدير فقط"""
-    if session.get('role') != 'manager':
-        flash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger')
-        return redirect(url_for('main.index'))
+    """صفحة تصدير البيانات - لمستخدم dev فقط"""
     return render_template('invoices/export.html')
 
 @bp.route('/api/test')
-@login_required()
+@dev_user_required
 def test_api():
-    """اختبار API - للمدير فقط"""
-    if session.get('role') != 'manager':
-        from flask import jsonify
-        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    """اختبار API - لمستخدم dev فقط"""
     from flask import jsonify
     return jsonify({'status': 'success', 'message': 'API يعمل بشكل صحيح'})
 
 @bp.route('/api/status')
-@login_required()
+@dev_user_required
 def api_status():
-    """حالة API - للمدير فقط"""
-    if session.get('role') != 'manager':
-        from flask import jsonify
-        return jsonify({'error': 'ليس لديك صلاحية للوصول إلى هذه البيانات'}), 403
+    """حالة API - لمستخدم dev فقط"""
     from flask import jsonify
     return jsonify({
         'status': 'active',

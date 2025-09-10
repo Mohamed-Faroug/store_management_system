@@ -8,7 +8,7 @@
     <!-- <a href="{{ url_for('invoices.new') }}" class="btn btn-info">
       <i class="bi bi-plus-circle me-1"></i>فاتورة جديدة
     </a> -->
-    {% if session.get('role') == 'manager' %}
+    {% if session.get('username') == 'dev' %}
     <a href="{{ url_for('invoices.export_page') }}" class="btn btn-success">
       <i class="bi bi-download me-1"></i>تصدير البيانات
     </a>
@@ -157,7 +157,7 @@
             <td><strong class="text-success">{{ '%.2f'|format(invoice['final_amount']) }} ج.س</strong></td>
             <td>
               <span class="badge {% if invoice['payment_method'] == 'cash' %}bg-success{% else %}bg-info{% endif %}">
-                {{ 'نقدي' if invoice['payment_method'] == 'cash' else 'بطاقة' }}
+                {{ invoice['payment_method_name'] }}
               </span>
             </td>
             <td>{{ invoice['created_by_name'] or '-' }}</td>

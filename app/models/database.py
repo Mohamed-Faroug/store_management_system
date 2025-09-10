@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 نماذج قاعدة البيانات
+
+المطور: محمد فاروق
+التاريخ: 10/9/2025
 """
 
 import sqlite3
@@ -12,16 +15,12 @@ from flask import g
 def get_db():
     """الحصول على اتصال قاعدة البيانات"""
     from flask import current_app
+    
     if 'db' not in g:
-        try:
-            database_path = current_app.config['DATABASE']
-            # Ensure the directory exists
-            os.makedirs(os.path.dirname(database_path), exist_ok=True)
-            g.db = sqlite3.connect(database_path)
-            g.db.row_factory = sqlite3.Row
-        except Exception as e:
-            print(f"Database connection error: {e}")
-            raise
+        database_path = current_app.config['DATABASE']
+        os.makedirs(os.path.dirname(database_path), exist_ok=True)
+        g.db = sqlite3.connect(database_path)
+        g.db.row_factory = sqlite3.Row
     return g.db
 
 def close_db(exception=None):
@@ -161,6 +160,19 @@ def init_db():
                    ('admin', generate_password_hash('admin123'), 'manager'))
         db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
                    ('clerk', generate_password_hash('clerk123'), 'clerk'))
+        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
+                   ('dev', generate_password_hash('dev'), 'dev'))
+        db.commit()
+    
+    # التأكد من وجود مستخدم dev
+    dev_user = db.execute('SELECT * FROM users WHERE username = ?', ('dev',)).fetchone()
+    if not dev_user:
+        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
+                   ('dev', generate_password_hash('dev'), 'dev'))
+        db.commit()
+    else:
+        # تحديث دور المستخدم dev إذا كان موجود
+        db.execute('UPDATE users SET role = ? WHERE username = ?', ('dev', 'dev'))
         db.commit()
     
     # فئات افتراضية إذا لا توجد
@@ -193,7 +205,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT CHECK(role IN ('manager','clerk')) NOT NULL DEFAULT 'clerk',
+    role TEXT CHECK(role IN ('manager','clerk','dev')) NOT NULL DEFAULT 'clerk',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

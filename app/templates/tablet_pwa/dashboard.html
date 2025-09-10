@@ -1,0 +1,198 @@
+{% extends "tablet_pwa/base.html" %}
+
+{% block title %}لوحة التحكم - نظام إدارة المخزون{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- الإحصائيات -->
+    <div class="row mb-5">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="pwa-stats pwa-stats-primary">
+                <div class="pwa-stats-number" id="totalItems">0</div>
+                <div class="pwa-stats-label">إجمالي المنتجات</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="pwa-stats pwa-stats-success">
+                <div class="pwa-stats-number" id="todaySales">0</div>
+                <div class="pwa-stats-label">مبيعات اليوم</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="pwa-stats pwa-stats-warning">
+                <div class="pwa-stats-number" id="lowStock">0</div>
+                <div class="pwa-stats-label">منخفضة المخزون</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="pwa-stats pwa-stats-info">
+                <div class="pwa-stats-number" id="todayInvoices">0</div>
+                <div class="pwa-stats-label">فواتير اليوم</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الأزرار الرئيسية -->
+    <div class="pwa-grid">
+        <a href="/pos" class="pwa-btn pwa-btn-primary">
+            <i class="bi bi-cart-plus me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">نقطة البيع</div>
+                <small style="opacity: 0.9;">إدارة المبيعات</small>
+            </div>
+        </a>
+        
+        <a href="/items" class="pwa-btn pwa-btn-success">
+            <i class="bi bi-box me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">إدارة المنتجات</div>
+                <small style="opacity: 0.9;">إضافة وتعديل المنتجات</small>
+            </div>
+        </a>
+        
+        <a href="/sales" class="pwa-btn pwa-btn-info">
+            <i class="bi bi-graph-up me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">المبيعات</div>
+                <small style="opacity: 0.9;">عرض سجل المبيعات</small>
+            </div>
+        </a>
+        
+        <a href="/reports" class="pwa-btn pwa-btn-warning">
+            <i class="bi bi-file-earmark-text me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">التقارير</div>
+                <small style="opacity: 0.9;">تقارير مفصلة</small>
+            </div>
+        </a>
+        
+        <a href="/users" class="pwa-btn pwa-btn-secondary">
+            <i class="bi bi-people me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">المستخدمين</div>
+                <small style="opacity: 0.9;">إدارة المستخدمين</small>
+            </div>
+        </a>
+        
+        <a href="/settings" class="pwa-btn pwa-btn-secondary">
+            <i class="bi bi-gear me-3"></i>
+            <div>
+                <div style="font-size: 22px; font-weight: 700;">الإعدادات</div>
+                <small style="opacity: 0.9;">إعدادات النظام</small>
+            </div>
+        </a>
+    </div>
+    
+    <!-- معلومات المستخدم -->
+    <div class="pwa-card">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-2" style="color: #2c3e50;">
+                    <i class="bi bi-person-circle me-2"></i>
+                    مرحباً، {{ session.username }}
+                </h5>
+                <p class="text-muted mb-0" style="font-size: 16px;">
+                    <i class="bi bi-shield-check me-2"></i>
+                    دور: {{ session.role }}
+                </p>
+            </div>
+            <div class="col-auto">
+                <button class="pwa-btn pwa-btn-danger" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-2"></i>تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- معلومات التطبيق -->
+    <div class="pwa-card">
+        <div class="text-center">
+            <h6 style="color: #2c3e50; margin-bottom: 15px;">
+                <i class="bi bi-info-circle me-2"></i>
+                معلومات التطبيق
+            </h6>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="text-muted" style="font-size: 14px;">
+                        <i class="bi bi-phone me-1"></i>
+                        محسن للتابلت
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-muted" style="font-size: 14px;">
+                        <i class="bi bi-wifi me-1"></i>
+                        يعمل بدون إنترنت
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-muted" style="font-size: 14px;">
+                        <i class="bi bi-download me-1"></i>
+                        يمكن تثبيته كتطبيق
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// تحميل الإحصائيات
+async function loadStats() {
+    try {
+        const response = await apiCall('/api/dashboard_stats');
+        
+        document.getElementById('totalItems').textContent = response.total_items;
+        document.getElementById('todaySales').textContent = response.today_sales.toFixed(2) + ' ج.س';
+        document.getElementById('lowStock').textContent = response.low_stock;
+        document.getElementById('todayInvoices').textContent = response.today_invoices;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        showAlert('خطأ في تحميل الإحصائيات', 'danger');
+    }
+}
+
+// تسجيل الخروج
+function logout() {
+    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        window.location.href = '/logout';
+    }
+}
+
+// تحديث الإحصائيات كل 30 ثانية
+setInterval(loadStats, 30000);
+
+// تحميل الإحصائيات عند بدء الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    
+    // إضافة تأثيرات بصرية للإحصائيات
+    const statsNumbers = document.querySelectorAll('.pwa-stats-number');
+    statsNumbers.forEach(number => {
+        number.style.opacity = '0';
+        number.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            number.style.transition = 'all 0.5s ease';
+            number.style.opacity = '1';
+            number.style.transform = 'translateY(0)';
+        }, 200);
+    });
+});
+
+// إضافة تأثيرات للأزرار
+document.querySelectorAll('.pwa-btn').forEach(btn => {
+    btn.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-3px) scale(1.02)';
+    });
+    
+    btn.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+    });
+});
+</script>
+{% endblock %}

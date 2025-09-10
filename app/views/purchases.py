@@ -6,6 +6,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..models.database import get_db, now_str
 from ..utils.auth import login_required
+from ..utils.payment_utils import get_payment_method_display_name
 
 bp = Blueprint('purchases', __name__)
 
@@ -20,7 +21,15 @@ def list():
         LEFT JOIN users u ON u.id = p.created_by
         ORDER BY p.created_at DESC
     ''').fetchall()
-    return render_template('purchases/list.html', purchases=purchases)
+    
+    # إضافة أسماء طرق الدفع للمشتريات
+    purchases_with_payment_names = []
+    for purchase in purchases:
+        purchase_dict = dict(purchase)
+        purchase_dict['payment_method_name'] = get_payment_method_display_name(purchase['payment_method'])
+        purchases_with_payment_names.append(purchase_dict)
+    
+    return render_template('purchases/list.html', purchases=purchases_with_payment_names)
 
 @bp.route('/purchases/new', methods=['GET', 'POST'])
 @login_required()
@@ -112,4 +121,10 @@ def view(purchase_id):
         WHERE pi.purchase_id = ?
     ''', (purchase_id,)).fetchall()
     
-    return render_template('purchases/view.html', purchase=purchase, items=items)
+    # الحصول على اسم طريقة الدفع
+    payment_method_name = get_payment_method_display_name(purchase['payment_method'])
+    
+    return render_template('purchases/view.html', 
+                         purchase=purchase, 
+                         items=items, 
+                         payment_method_name=payment_method_name)

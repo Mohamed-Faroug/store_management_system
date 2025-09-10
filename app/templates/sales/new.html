@@ -17,7 +17,7 @@
 
   <div class="row g-3">
     <!-- Left Side - Items Grid -->
-    <div class="col-lg-9">
+    <div class="col-lg-7">
       <!-- Search and Filter Bar -->
       <div class="card mb-3">
         <div class="card-header bg-primary text-white">
@@ -49,22 +49,22 @@
           <h6 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>الأصناف المتاحة</h6>
           <span class="badge bg-light text-success" id="items-count">{{ items|length }} صنف</span>
         </div>
-        <div class="card-body p-2">
-          <div class="row g-2" id="items-grid" style="max-height: 60vh; overflow-y: auto;">
+        <div class="card-body p-1">
+          <div class="row g-1" id="items-grid" style="max-height: 65vh; overflow-y: auto;">
             {% for item in items %}
-            <div class="col-lg-4 col-md-4 col-sm-6 item-card" data-item-id="{{ item['id'] }}" data-category="{{ item['category_id'] }}" data-name="{{ item['name']|lower }}" data-sku="{{ item['sku']|lower }}">
+            <div class="col-lg-4 col-md-4 col-sm-6 col-6 item-card" data-item-id="{{ item['id'] }}" data-category="{{ item['category_id'] }}" data-name="{{ item['name']|lower }}" data-sku="{{ item['sku']|lower }}">
               <div class="card h-100 item-card-inner" onclick="addToCart({{ item['id'] }}, '{{ item['name']|replace("'", "\\'") }}', {{ item['selling_price'] }}, {{ item['quantity'] }})">
-                <div class="card-body text-center p-2">
-                  <div class="item-image mb-2">
-                    <i class="bi bi-box display-6 text-primary"></i>
+                <div class="card-body text-center p-1">
+                  <div class="item-image mb-1">
+                    <i class="bi bi-box text-primary" style="font-size: 1.5rem;"></i>
                   </div>
-                  <h6 class="card-title mb-1" style="font-size: 0.95rem;">{{ item['name'] }}</h6>
-                  <p class="card-text text-muted small mb-1">{{ item['sku'] }}</p>
+                  <h6 class="card-title mb-1" style="font-size: 0.8rem; line-height: 1.2;">{{ item['name'] }}</h6>
+                  <p class="card-text text-muted small mb-1" style="font-size: 0.7rem;">{{ item['sku'] }}</p>
                   <div class="item-price mb-1">
-                    <span class="badge bg-success fs-6">{{ '%.2f'|format(item['selling_price']) }} ج.س</span>
+                    <span class="badge bg-success" style="font-size: 0.7rem;">{{ '%.2f'|format(item['selling_price']) }} ج.س</span>
                   </div>
                   <div class="item-stock">
-                    <small class="text-muted">المخزون: {{ item['quantity'] }}</small>
+                    <small class="text-muted" style="font-size: 0.65rem;">المخزون: {{ item['quantity'] }}</small>
                   </div>
                 </div>
               </div>
@@ -76,7 +76,7 @@
     </div>
 
     <!-- Right Side - Cart -->
-    <div class="col-lg-3">
+    <div class="col-lg-5">
       <div class="card h-100">
         <div class="card-header bg-info text-white">
           <h6 class="mb-0"><i class="bi bi-cart3 me-2"></i>سلة المشتريات</h6>
@@ -105,14 +105,34 @@
                 </div>
               </div>
             </div>
-            <div class="row mb-1">
-              <div class="col-6">الضريبة (5%):</div>
+            <div class="row mb-1" id="tax-row" style="display: {{ 'block' if tax_config.get('enabled', False) else 'none' }}">
+              <div class="col-6">الضريبة ({{ tax_config.get('rate', 0) }}%):</div>
               <div class="col-6 text-end" id="tax-amount">0.00 ج.س</div>
             </div>
             <hr class="my-2">
             <div class="row mb-2">
               <div class="col-6"><strong>المجموع الكلي:</strong></div>
               <div class="col-6 text-end"><strong id="total-amount">0.00 ج.س</strong></div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="row mb-3" id="payment-method-row" style="display: {{ 'block' if pos_settings.get('display_settings', {}).get('show_payment_method', True) else 'none' }}">
+              <div class="col-12">
+                <label class="form-label"><strong>طريقة الدفع:</strong></label>
+                <div class="row g-2">
+                  {% for method in payment_methods %}
+                  <div class="col-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="payment_method" id="payment_{{ method.id }}" 
+                             value="{{ method.id }}" {{ 'checked' if loop.first else '' }}>
+                      <label class="form-check-label" for="payment_{{ method.id }}">
+                        <i class="{{ method.icon }} me-1"></i>{{ method.name }}
+                      </label>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
             </div>
 
             <!-- Action Buttons -->
@@ -138,6 +158,7 @@
   <input type="hidden" name="discount_amount" id="discount-amount-input">
   <input type="hidden" name="tax_amount" id="tax-amount-input">
   <input type="hidden" name="final_amount" id="final-amount-input">
+  <input type="hidden" name="payment_method" id="payment-method-input">
 </form>
 
 <script>
@@ -413,14 +434,24 @@ function updateTotals() {
   
   const discount = parseFloat(document.getElementById('discount-input').value) || 0;
   const taxableAmount = subtotal - discount;
-  const tax = taxableAmount * 0.05;
+  
+  // Use tax settings
+  const taxEnabled = {{ tax_config.get('enabled', false) | tojson }};
+  const taxRate = {{ tax_config.get('rate', 0) | tojson }} / 100;
+  const tax = taxEnabled ? taxableAmount * taxRate : 0;
   const total = taxableAmount + tax;
   
-  console.log('Calculated totals:', {subtotal, discount, taxableAmount, tax, total});
+  console.log('Calculated totals:', {subtotal, discount, taxableAmount, tax, total, taxEnabled, taxRate});
   
   document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' ج.س';
   document.getElementById('tax-amount').textContent = tax.toFixed(2) + ' ج.س';
   document.getElementById('total-amount').textContent = total.toFixed(2) + ' ج.س';
+  
+  // Show/hide tax row based on settings
+  const taxRow = document.getElementById('tax-row');
+  if (taxRow) {
+    taxRow.style.display = taxEnabled ? 'block' : 'none';
+  }
 }
 
 // Clear cart
@@ -460,7 +491,11 @@ function checkout() {
   
   const discount = parseFloat(document.getElementById('discount-input').value) || 0;
   const taxableAmount = subtotal - discount;
-  const tax = taxableAmount * 0.05;
+  
+  // Use tax settings
+  const taxEnabled = {{ tax_config.get('enabled', false) | tojson }};
+  const taxRate = {{ tax_config.get('rate', 0) | tojson }} / 100;
+  const tax = taxEnabled ? taxableAmount * taxRate : 0;
   const total = taxableAmount + tax;
   
   // Prepare data for submission
@@ -479,12 +514,17 @@ function checkout() {
     total
   });
   
+  // Get selected payment method
+  const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked');
+  const paymentMethod = selectedPaymentMethod ? selectedPaymentMethod.value : 'cash';
+  
   // Fill hidden form
   document.getElementById('items-data').value = JSON.stringify(itemsData);
   document.getElementById('total-amount-input').value = subtotal;
   document.getElementById('discount-amount-input').value = discount;
   document.getElementById('tax-amount-input').value = tax;
   document.getElementById('final-amount-input').value = total;
+  document.getElementById('payment-method-input').value = paymentMethod;
   
   // Show loading state
   const checkoutBtn = document.getElementById('checkout-btn');
@@ -520,8 +560,9 @@ style.textContent = `
   .item-card-inner {
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid transparent;
+    border: 1px solid #dee2e6;
     height: 100%;
+    min-height: 120px;
   }
   
   .item-card-inner:hover {
@@ -531,7 +572,7 @@ style.textContent = `
   }
   
   .item-image {
-    height: 70px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -539,14 +580,16 @@ style.textContent = `
   
   .cart-item {
     transition: all 0.3s ease;
-    padding: 0.75rem 0;
-    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background-color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
   .cart-item:hover {
     background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 0.75rem 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
   
   .cart-item .input-group {
@@ -565,10 +608,11 @@ style.textContent = `
   
   .cart-summary {
     background-color: #f8f9fa;
-    padding: 0.75rem;
+    padding: 1rem;
     border-radius: 8px;
     border: 1px solid #dee2e6;
   }
+  
   
   /* Cart item improvements */
   .cart-item h6 {
@@ -601,32 +645,32 @@ style.textContent = `
     cursor: not-allowed;
   }
   
-  /* Responsive adjustments for 3x3 layout */
+  /* Responsive adjustments for compact layout */
   @media (max-width: 1200px) {
     .item-card-inner {
-      padding: 0.75rem;
+      padding: 0.5rem;
     }
     
     .item-image {
-      height: 65px;
+      height: 35px;
     }
     
     .item-card-inner h6 {
-      font-size: 0.9rem;
+      font-size: 0.75rem;
     }
   }
   
   @media (max-width: 992px) {
     .item-card-inner {
-      padding: 0.6rem;
+      padding: 0.4rem;
     }
     
     .item-image {
-      height: 60px;
+      height: 30px;
     }
     
     .item-card-inner h6 {
-      font-size: 0.85rem;
+      font-size: 0.7rem;
     }
   }
   
@@ -644,15 +688,15 @@ style.textContent = `
     }
     
     .item-card-inner {
-      padding: 0.5rem;
+      padding: 0.3rem;
     }
     
     .item-image {
-      height: 55px;
+      height: 25px;
     }
     
     .item-card-inner h6 {
-      font-size: 0.8rem;
+      font-size: 0.65rem;
     }
     
     .cart-item {

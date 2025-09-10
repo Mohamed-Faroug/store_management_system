@@ -1,0 +1,37 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include API_DOCUMENTATION.md
+include DEPLOYMENT_GUIDE.md
+include requirements.txt
+include env.example
+include setup.py
+include run.py
+include config.py
+
+recursive-include app/static *
+recursive-include app/templates *
+recursive-include app/utils *
+recursive-include app/views *
+recursive-include app/models *
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store
+recursive-exclude * .git*
+recursive-exclude * .vscode
+recursive-exclude * .idea
+recursive-exclude * *.log
+recursive-exclude * *.db
+recursive-exclude * *.sqlite
+recursive-exclude * *.sqlite3
+recursive-exclude * uploads
+recursive-exclude * backups
+recursive-exclude * logs
+recursive-exclude * temp
+recursive-exclude * cache
+recursive-exclude * venv
+recursive-exclude * .env
+recursive-exclude * .env.local
+recursive-exclude * .env.production

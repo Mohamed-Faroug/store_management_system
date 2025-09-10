@@ -1,40 +1,52 @@
-// Add loading states to buttons
-document.addEventListener('DOMContentLoaded', function() {
-  const forms = document.querySelectorAll('form');
-  forms.forEach(form => {
-    form.addEventListener('submit', function() {
-      const submitBtn = form.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="loading"></span> جاري المعالجة...';
-        submitBtn.disabled = true;
-      }
-    });
-  });
-  
-  // Add smooth scrolling
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      document.querySelector(this.getAttribute('href')).scrollIntoView({
-        behavior: 'smooth'
-      });
-    });
-  });
-  
-  // Add tooltips
-  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
+/* نظام إدارة المخزون - مخزن الزينة */
 
-  // تحسين الإشعارات
-  initNotifications();
-  
-  // تحسين أزرار الحذف والتأكيد
-  enhanceDeleteButtons();
-  enhanceConfirmButtons();
+document.addEventListener('DOMContentLoaded', function() {
+    initFormHandlers();
+    initSmoothScrolling();
+    initTooltips();
+    initNotifications();
+    initDeleteButtons();
+    initConfirmButtons();
 });
+
+function initFormHandlers() {
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn && !submitBtn.disabled) {
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>جاري المعالجة...';
+                submitBtn.disabled = true;
+                setTimeout(() => {
+                    if (submitBtn.disabled) {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                }, 5000);
+            }
+        });
+    });
+}
+
+function initSmoothScrolling() {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+}
+
+function initTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
 
 // تحسين الإشعارات
 function initNotifications() {
@@ -373,41 +385,89 @@ function exportTodayData() {
   });
 }
 
-function showSystemInfo() {
-  const systemInfo = `
-    <div class="system-info">
-      <div class="row">
-        <div class="col-md-6">
-          <h6><i class="bi bi-cpu me-2"></i>معلومات النظام</h6>
-          <ul class="list-unstyled">
-            <li><strong>اسم النظام:</strong> مخزن الزينة</li>
-            <li><strong>الإصدار:</strong> 2.0.0</li>
-            <li><strong>تاريخ التحديث:</strong> ${new Date().toLocaleDateString('ar-SA')}</li>
-            <li><strong>المطور:</strong> محمد فاروق</li>
-          </ul>
-        </div>
-        <div class="col-md-6">
-          <h6><i class="bi bi-gear me-2"></i>إحصائيات النظام</h6>
-          <ul class="list-unstyled">
-            <li><strong>إجمالي المنتجات:</strong> ${document.querySelector('#total-items')?.textContent || '0'}</li>
-             <li><strong>مبيعات اليوم:</strong> ${document.querySelector('#today-sales')?.textContent || '0 ج.س'}</li>
-            <li><strong>فواتير اليوم:</strong> ${document.querySelector('#today-invoices')?.textContent || '0'}</li>
-            <li><strong>المخزون المنخفض:</strong> ${document.querySelector('#low-stock')?.textContent || '0'}</li>
-          </ul>
+async function showSystemInfo() {
+  try {
+    // جلب إعدادات المتجر
+    const response = await fetch('/api/settings/store');
+    const result = await response.json();
+    const settings = result.success ? result.settings : {};
+    
+    const systemInfo = `
+      <div class="system-info">
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="bi bi-cpu me-2"></i>معلومات النظام</h6>
+            <ul class="list-unstyled">
+              <li><strong>اسم النظام:</strong> ${settings.app_name || 'نظام إدارة المخزون - مخزن الزينة'}</li>
+              <li><strong>الوصف:</strong> ${settings.store_description || 'نظام متكامل لإدارة المخزون والمبيعات والمشتريات'}</li>
+              <li><strong>الإصدار:</strong> ${settings.app_version || '2.1'}</li>
+              <li><strong>تاريخ آخر تحديث:</strong> ${settings.last_updated ? settings.last_updated.split('T')[0] : '9/9/2025'}</li>
+              <li><strong>المطور:</strong> محمد فاروق</li>
+              <li><strong>جميع الحقوق محفوظة © 2025</strong></li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="bi bi-gear me-2"></i>إحصائيات النظام</h6>
+            <ul class="list-unstyled">
+              <li><strong>إجمالي المنتجات:</strong> ${document.querySelector('#total-items')?.textContent || '0'}</li>
+               <li><strong>مبيعات اليوم:</strong> ${document.querySelector('#today-sales')?.textContent || '0 ج.س'}</li>
+              <li><strong>فواتير اليوم:</strong> ${document.querySelector('#today-invoices')?.textContent || '0'}</li>
+              <li><strong>المخزون المنخفض:</strong> ${document.querySelector('#low-stock')?.textContent || '0'}</li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-  showConfirmModal({
-    title: 'معلومات النظام',
-    message: systemInfo,
-    type: 'info',
-    confirmText: 'حسناً',
-    cancelText: '',
-    icon: 'info-circle-fill',
-    onConfirm: () => {}
-  });
+    showConfirmModal({
+      title: 'معلومات النظام',
+      message: systemInfo,
+      type: 'info',
+      confirmText: 'حسناً',
+      cancelText: '',
+      icon: 'info-circle-fill',
+      onConfirm: () => {}
+    });
+  } catch (error) {
+    console.error('Error loading system info:', error);
+    // عرض المعلومات الافتراضية في حالة الخطأ
+    const systemInfo = `
+      <div class="system-info">
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="bi bi-cpu me-2"></i>معلومات النظام</h6>
+            <ul class="list-unstyled">
+              <li><strong>اسم النظام:</strong> نظام إدارة المخزون - مخزن الزينة</li>
+              <li><strong>الوصف:</strong> نظام متكامل لإدارة المخزون والمبيعات والمشتريات</li>
+              <li><strong>الإصدار:</strong> 2.1</li>
+              <li><strong>تاريخ آخر تحديث:</strong> 9/9/2025</li>
+              <li><strong>المطور:</strong> محمد فاروق</li>
+              <li><strong>جميع الحقوق محفوظة © 2025</strong></li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="bi bi-gear me-2"></i>إحصائيات النظام</h6>
+            <ul class="list-unstyled">
+              <li><strong>إجمالي المنتجات:</strong> ${document.querySelector('#total-items')?.textContent || '0'}</li>
+               <li><strong>مبيعات اليوم:</strong> ${document.querySelector('#today-sales')?.textContent || '0 ج.س'}</li>
+              <li><strong>فواتير اليوم:</strong> ${document.querySelector('#today-invoices')?.textContent || '0'}</li>
+              <li><strong>المخزون المنخفض:</strong> ${document.querySelector('#low-stock')?.textContent || '0'}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    `;
+
+    showConfirmModal({
+      title: 'معلومات النظام',
+      message: systemInfo,
+      type: 'info',
+      confirmText: 'حسناً',
+      cancelText: '',
+      icon: 'info-circle-fill',
+      onConfirm: () => {}
+    });
+  }
 }
 
 function backupData() {

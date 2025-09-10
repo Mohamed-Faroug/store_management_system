@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-gear me-2"></i>إعدادات المتجر</h2>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة للرئيسية
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-shop me-2"></i>بيانات المتجر</h5>
+                </div>
+                <div class="card-body">
+                    <form id="store-settings-form">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="store_name" class="form-label">اسم المتجر</label>
+                                <input type="text" class="form-control" id="store_name" name="store_name" 
+                                       value="{{ store_settings.store_name or 'مخزن الزينة - إدارة المخزون' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="store_address" class="form-label">العنوان</label>
+                                <input type="text" class="form-control" id="store_address" name="store_address" 
+                                       value="{{ store_settings.store_address or 'شارع الملك فيصل، الرياض، المملكة العربية السعودية' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="store_phone" class="form-label">الهاتف</label>
+                                <input type="text" class="form-control" id="store_phone" name="store_phone" 
+                                       value="{{ store_settings.store_phone or '+966 50 123 4567' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="store_email" class="form-label">البريد الإلكتروني</label>
+                                <input type="email" class="form-control" id="store_email" name="store_email" 
+                                       value="{{ store_settings.store_email or 'info@zina-store.com' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tax_number" class="form-label">الرقم الضريبي</label>
+                                <input type="text" class="form-control" id="tax_number" name="tax_number" 
+                                       value="{{ store_settings.tax_number or '123456789012345' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="commercial_register" class="form-label">السجل التجاري</label>
+                                <input type="text" class="form-control" id="commercial_register" name="commercial_register" 
+                                       value="{{ store_settings.commercial_register or '1010123456' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="app_name" class="form-label">اسم التطبيق</label>
+                                <input type="text" class="form-control" id="app_name" name="app_name" 
+                                       value="{{ store_settings.app_name or 'نظام إدارة المخزون - مخزن الزينة' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="app_version" class="form-label">إصدار التطبيق</label>
+                                <input type="text" class="form-control" id="app_version" name="app_version" 
+                                       value="{{ store_settings.app_version or '2.1' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="store_description" class="form-label">وصف المتجر</label>
+                                <textarea class="form-control" id="store_description" name="store_description" rows="3">{{ store_settings.store_description or 'نظام متكامل لإدارة المخزون والمبيعات والمشتريات' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>حفظ الإعدادات
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetSettings()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-eye me-2"></i>معاينة الفاتورة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="invoice-preview">
+                        <div class="text-center mb-3">
+                            <h4 id="preview_store_name">{{ store_settings.store_name or 'مخزن الزينة - إدارة المخزون' }}</h4>
+                            <p class="text-muted mb-1" id="preview_store_address">{{ store_settings.store_address or 'شارع الملك فيصل، الرياض، المملكة العربية السعودية' }}</p>
+                            <p class="text-muted mb-1">
+                                الهاتف: <span id="preview_store_phone">{{ store_settings.store_phone or '+966 50 123 4567' }}</span> | 
+                                البريد الإلكتروني: <span id="preview_store_email">{{ store_settings.store_email or 'info@zina-store.com' }}</span>
+                            </p>
+                            <p class="text-muted mb-3">
+                                الرقم الضريبي: <span id="preview_tax_number">{{ store_settings.tax_number or '123456789012345' }}</span> | 
+                                السجل التجاري: <span id="preview_commercial_register">{{ store_settings.commercial_register or '1010123456' }}</span>
+                            </p>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <h5>فاتورة بيع</h5>
+                            <p class="text-muted">رقم الفاتورة: #12345</p>
+                            <p class="text-muted">التاريخ: 2025-09-09</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات النظام</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>اسم التطبيق:</strong><br>
+                            <span id="preview_app_name">{{ store_settings.app_name or 'نظام إدارة المخزون - مخزن الزينة' }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>الإصدار:</strong><br>
+                            <span id="preview_app_version">{{ store_settings.app_version or '2.1' }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>آخر تحديث:</strong><br>
+                            <span>2025-09-09</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث المعاينة عند تغيير الحقول
+    const formFields = document.querySelectorAll('#store-settings-form input, #store-settings-form textarea');
+    formFields.forEach(field => {
+        field.addEventListener('input', updatePreview);
+    });
+    
+    // معالجة إرسال النموذج
+    document.getElementById('store-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveStoreSettings();
+    });
+});
+
+function updatePreview() {
+    const storeName = document.getElementById('store_name').value;
+    const storeAddress = document.getElementById('store_address').value;
+    const storePhone = document.getElementById('store_phone').value;
+    const storeEmail = document.getElementById('store_email').value;
+    const taxNumber = document.getElementById('tax_number').value;
+    const commercialRegister = document.getElementById('commercial_register').value;
+    const appName = document.getElementById('app_name').value;
+    const appVersion = document.getElementById('app_version').value;
+    
+    // تحديث المعاينة
+    document.getElementById('preview_store_name').textContent = storeName;
+    document.getElementById('preview_store_address').textContent = storeAddress;
+    document.getElementById('preview_store_phone').textContent = storePhone;
+    document.getElementById('preview_store_email').textContent = storeEmail;
+    document.getElementById('preview_tax_number').textContent = taxNumber;
+    document.getElementById('preview_commercial_register').textContent = commercialRegister;
+    document.getElementById('preview_app_name').textContent = appName;
+    document.getElementById('preview_app_version').textContent = appVersion;
+}
+
+async function saveStoreSettings() {
+    const formData = new FormData(document.getElementById('store-settings-form'));
+    const data = Object.fromEntries(formData);
+    
+    try {
+        const response = await fetch('/settings/api/store', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم حفظ الإعدادات بنجاح!', 'success');
+            // تحديث عنوان الصفحة
+            document.title = data.app_name + ' - إعدادات المتجر';
+        } else {
+            showNotification('خطأ في حفظ الإعدادات: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+async function resetSettings() {
+    if (confirm('هل أنت متأكد من إعادة تعيين الإعدادات إلى القيم الافتراضية؟')) {
+        try {
+            const response = await fetch('/settings/api/store/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('تم إعادة تعيين الإعدادات بنجاح!', 'success');
+                // إعادة تحميل الصفحة لعرض القيم الافتراضية
+                location.reload();
+            } else {
+                showNotification('خطأ في إعادة تعيين الإعدادات: ' + result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error resetting settings:', error);
+            showNotification('خطأ في الاتصال بالخادم', 'danger');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

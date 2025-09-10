@@ -1,0 +1,40 @@
+# Global code owners
+* @mfarouk
+
+# Python files
+*.py @mfarouk
+
+# Configuration files
+*.yml @mfarouk
+*.yaml @mfarouk
+*.json @mfarouk
+*.toml @mfarouk
+*.ini @mfarouk
+*.cfg @mfarouk
+*.conf @mfarouk
+
+# Documentation
+*.md @mfarouk
+docs/ @mfarouk
+
+# Docker files
+Dockerfile* @mfarouk
+docker-compose*.yml @mfarouk
+.dockerignore @mfarouk
+
+# CI/CD
+.github/ @mfarouk
+
+# Tests
+tests/ @mfarouk
+*_test.py @mfarouk
+test_*.py @mfarouk
+
+# Requirements
+requirements*.txt @mfarouk
+pyproject.toml @mfarouk
+setup.py @mfarouk
+
+# Security
+SECURITY.md @mfarouk
+.github/SECURITY.md @mfarouk

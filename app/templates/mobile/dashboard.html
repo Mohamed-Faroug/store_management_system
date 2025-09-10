@@ -1,0 +1,128 @@
+{% extends "mobile/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- الإحصائيات -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="mobile-stats mobile-stats-primary">
+                <div class="mobile-stats-number" id="totalItems">0</div>
+                <div class="mobile-stats-label">إجمالي المنتجات</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="mobile-stats mobile-stats-success">
+                <div class="mobile-stats-number" id="todaySales">0</div>
+                <div class="mobile-stats-label">مبيعات اليوم</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="mobile-stats mobile-stats-warning">
+                <div class="mobile-stats-number" id="lowStock">0</div>
+                <div class="mobile-stats-label">منخفضة المخزون</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="mobile-stats mobile-stats-info">
+                <div class="mobile-stats-number" id="todayInvoices">0</div>
+                <div class="mobile-stats-label">فواتير اليوم</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- الأزرار الرئيسية -->
+    <div class="mobile-grid">
+        <button class="mobile-btn mobile-btn-primary" onclick="goToPage('/pos')">
+            <i class="bi bi-cart-plus me-2"></i>
+            <div>نقطة البيع</div>
+            <small>إدارة المبيعات</small>
+        </button>
+        
+        <button class="mobile-btn mobile-btn-success" onclick="goToPage('/items')">
+            <i class="bi bi-box me-2"></i>
+            <div>إدارة المنتجات</div>
+            <small>إضافة وتعديل المنتجات</small>
+        </button>
+        
+        <button class="mobile-btn mobile-btn-info" onclick="goToPage('/sales')">
+            <i class="bi bi-graph-up me-2"></i>
+            <div>المبيعات</div>
+            <small>عرض سجل المبيعات</small>
+        </button>
+        
+        <button class="mobile-btn mobile-btn-warning" onclick="goToPage('/reports')">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            <div>التقارير</div>
+            <small>تقارير مفصلة</small>
+        </button>
+        
+        <button class="mobile-btn mobile-btn-secondary" onclick="goToPage('/users')">
+            <i class="bi bi-people me-2"></i>
+            <div>المستخدمين</div>
+            <small>إدارة المستخدمين</small>
+        </button>
+        
+        <button class="mobile-btn mobile-btn-secondary" onclick="goToPage('/settings')">
+            <i class="bi bi-gear me-2"></i>
+            <div>الإعدادات</div>
+            <small>إعدادات النظام</small>
+        </button>
+    </div>
+    
+    <!-- معلومات المستخدم -->
+    <div class="mobile-card">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-1">مرحباً، {{ session.username }}</h5>
+                <p class="text-muted mb-0">دور: {{ session.role }}</p>
+            </div>
+            <div class="col-auto">
+                <button class="mobile-btn mobile-btn-danger" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-2"></i>تسجيل الخروج
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// تحميل الإحصائيات
+async function loadStats() {
+    try {
+        const response = await apiCall('/api/dashboard_stats');
+        
+        document.getElementById('totalItems').textContent = response.total_items;
+        document.getElementById('todaySales').textContent = response.today_sales.toFixed(2) + ' ج.س';
+        document.getElementById('lowStock').textContent = response.low_stock;
+        document.getElementById('todayInvoices').textContent = response.today_invoices;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+// الانتقال إلى صفحة
+function goToPage(url) {
+    window.location.href = url;
+}
+
+// تسجيل الخروج
+function logout() {
+    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        window.location.href = '/logout';
+    }
+}
+
+// تحديث الإحصائيات كل 30 ثانية
+setInterval(loadStats, 30000);
+
+// تحميل الإحصائيات عند بدء الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+});
+</script>
+{% endblock %}

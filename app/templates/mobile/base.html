@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>نظام إدارة المخزون - تطبيق التابلت</title>
+    
+    <!-- Bootstrap RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Mobile Styles -->
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .mobile-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        .mobile-content {
+            padding: 20px;
+            min-height: calc(100vh - 80px);
+        }
+        
+        .mobile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: none;
+        }
+        
+        .mobile-btn {
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: none;
+            margin: 5px;
+            min-height: 60px;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .mobile-btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+        
+        .mobile-btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+        
+        .mobile-btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+        }
+        
+        .mobile-btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        
+        .mobile-btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        
+        .mobile-btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+        
+        .mobile-input {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+        
+        .mobile-input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .mobile-label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .mobile-stats {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .mobile-stats-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+        
+        .mobile-stats-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+        
+        .mobile-stats-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+        
+        .mobile-stats-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        
+        .mobile-stats-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-stats-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .mobile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .mobile-item-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .mobile-item-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .mobile-item-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #27ae60;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-item-stock {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .mobile-cart-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .mobile-cart-item-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-cart-item-details {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .mobile-cart-total {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 20px;
+        }
+        
+        .mobile-search {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .mobile-search-input {
+            padding: 15px 50px 15px 15px;
+            font-size: 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            width: 100%;
+            background: #f8f9fa;
+        }
+        
+        .mobile-search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 20px;
+        }
+        
+        .mobile-alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .mobile-alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .mobile-alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .mobile-alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .mobile-alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .mobile-btn {
+                font-size: 16px;
+                padding: 12px 20px;
+                min-height: 50px;
+            }
+            
+            .mobile-stats-number {
+                font-size: 28px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .mobile-container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="mobile-header">
+            <h1 class="mobile-title">{{ title or 'نظام إدارة المخزون' }}</h1>
+            <p class="mobile-subtitle">{{ subtitle or 'تطبيق التابلت' }}</p>
+        </div>
+        
+        <div class="mobile-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Mobile JS -->
+    <script>
+        // Mobile-specific JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevent zoom on double tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                let now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // Add touch feedback to buttons
+            document.querySelectorAll('.mobile-btn').forEach(btn => {
+                btn.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.95)';
+                });
+                
+                btn.addEventListener('touchend', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+        });
+        
+        // Show loading spinner
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.id = 'loading';
+            loading.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+                    <div style="background: white; padding: 30px; border-radius: 15px; text-align: center;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">جاري التحميل...</span>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 16px;">جاري التحميل...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loading);
+        }
+        
+        // Hide loading spinner
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+        
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const alert = document.createElement('div');
+            alert.className = `mobile-alert mobile-alert-${type}`;
+            alert.innerHTML = message;
+            
+            const content = document.querySelector('.mobile-content');
+            content.insertBefore(alert, content.firstChild);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // API call helper
+        async function apiCall(url, options = {}) {
+            try {
+                showLoading();
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                hideLoading();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'حدث خطأ في الخادم');
+                }
+                
+                return data;
+            } catch (error) {
+                hideLoading();
+                showAlert(error.message, 'danger');
+                throw error;
+            }
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

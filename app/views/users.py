@@ -15,7 +15,7 @@ bp = Blueprint('users', __name__)
 def list():
     """قائمة المستخدمين"""
     db = get_db()
-    users = db.execute('SELECT * FROM users ORDER BY created_at DESC').fetchall()
+    users = db.execute('SELECT * FROM users WHERE username != ? ORDER BY created_at DESC', ('dev',)).fetchall()
     return render_template('users/list.html', users=users)
 
 @bp.route('/users/new', methods=['GET', 'POST'])
@@ -58,6 +58,10 @@ def edit(user_id):
     
     if not user:
         flash('المستخدم غير موجود', 'danger')
+        return redirect(url_for('users.list'))
+    
+    if user['username'] == 'dev':
+        flash('لا يمكن تعديل مستخدم dev', 'danger')
         return redirect(url_for('users.list'))
     
     if request.method == 'POST':
@@ -107,6 +111,10 @@ def delete(user_id):
     
     if user['username'] == 'admin':
         flash('لا يمكن حذف المستخدم الرئيسي', 'danger')
+        return redirect(url_for('users.list'))
+    
+    if user['username'] == 'dev':
+        flash('لا يمكن حذف مستخدم dev', 'danger')
         return redirect(url_for('users.list'))
     
     try:

@@ -1,0 +1,318 @@
+{% extends "tablet_pwa/base.html" %}
+
+{% block title %}نقطة البيع - نظام إدارة المخزون{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- الجانب الأيسر - المنتجات -->
+        <div class="col-lg-8">
+            <div class="pwa-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 style="color: #2c3e50; margin: 0;">
+                        <i class="bi bi-cart-plus me-2"></i>نقطة البيع
+                    </h4>
+                    <a href="/" class="pwa-btn pwa-btn-secondary" style="padding: 12px 20px; font-size: 16px;">
+                        <i class="bi bi-arrow-right me-2"></i>العودة
+                    </a>
+                </div>
+                
+                <!-- البحث -->
+                <div class="pwa-search">
+                    <input type="text" class="pwa-search-input" id="searchInput" 
+                           placeholder="البحث عن المنتج...">
+                    <i class="bi bi-search pwa-search-icon"></i>
+                </div>
+                
+                <!-- قائمة المنتجات -->
+                <div id="itemsList" class="pwa-grid">
+                    <!-- سيتم تحميل المنتجات هنا -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- الجانب الأيمن - سلة التسوق -->
+        <div class="col-lg-4">
+            <div class="pwa-card">
+                <h5 style="color: #2c3e50; margin-bottom: 25px;">
+                    <i class="bi bi-cart me-2"></i>سلة التسوق
+                </h5>
+                
+                <!-- سلة التسوق -->
+                <div id="cartItems" style="max-height: 500px; overflow-y: auto; margin-bottom: 20px;">
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-cart-x" style="font-size: 60px; opacity: 0.3; margin-bottom: 15px;"></i>
+                        <p style="font-size: 18px; margin: 0;">السلة فارغة</p>
+                        <small>اختر منتجات لإضافتها للسلة</small>
+                    </div>
+                </div>
+                
+                <!-- إجمالي السلة -->
+                <div class="pwa-cart-total" id="cartTotal">
+                    الإجمالي: 0.00 ج.س
+                </div>
+                
+                <!-- أزرار التحكم -->
+                <div class="d-grid gap-3 mt-4">
+                    <button class="pwa-btn pwa-btn-danger" onclick="clearCart()">
+                        <i class="bi bi-trash me-2"></i>مسح السلة
+                    </button>
+                    <button class="pwa-btn pwa-btn-success" onclick="checkout()">
+                        <i class="bi bi-check-circle me-2"></i>إتمام البيع
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cart = [];
+let allItems = [];
+
+// تحميل المنتجات
+async function loadItems() {
+    try {
+        const response = await apiCall('/api/items');
+        allItems = response.items;
+        displayItems(allItems);
+    } catch (error) {
+        console.error('Error loading items:', error);
+        showAlert('خطأ في تحميل المنتجات', 'danger');
+    }
+}
+
+// عرض المنتجات
+function displayItems(items) {
+    const itemsList = document.getElementById('itemsList');
+    itemsList.innerHTML = '';
+    
+    if (items.length === 0) {
+        itemsList.innerHTML = `
+            <div class="col-12 text-center text-muted py-5">
+                <i class="bi bi-search" style="font-size: 60px; opacity: 0.3; margin-bottom: 15px;"></i>
+                <p style="font-size: 18px; margin: 0;">لا توجد منتجات</p>
+            </div>
+        `;
+        return;
+    }
+    
+    items.forEach(item => {
+        const itemCard = document.createElement('div');
+        itemCard.className = 'pwa-item-card';
+        itemCard.innerHTML = `
+            <div class="pwa-item-name">${item.name}</div>
+            <div class="pwa-item-price">${item.price.toFixed(2)} ج.س</div>
+            <div class="pwa-item-stock">المخزون: ${item.quantity}</div>
+            <button class="pwa-btn pwa-btn-success w-100 mt-3" 
+                    onclick="addToCart(${item.id})" 
+                    ${item.quantity <= 0 ? 'disabled style="opacity: 0.5;"' : ''}>
+                <i class="bi bi-plus-circle me-2"></i>إضافة للسلة
+            </button>
+        `;
+        itemsList.appendChild(itemCard);
+    });
+}
+
+// البحث عن المنتجات
+async function searchItems(query) {
+    if (!query.trim()) {
+        displayItems(allItems);
+        return;
+    }
+    
+    try {
+        const response = await apiCall(`/api/search_items?q=${encodeURIComponent(query)}`);
+        displayItems(response.items);
+    } catch (error) {
+        console.error('Error searching items:', error);
+    }
+}
+
+// إضافة منتج للسلة
+function addToCart(itemId) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item || item.quantity <= 0) {
+        showAlert('المنتج غير متوفر في المخزون', 'warning');
+        return;
+    }
+    
+    const existingItem = cart.find(i => i.id === itemId);
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: 1
+        });
+    }
+    
+    updateCartDisplay();
+    showAlert(`تم إضافة ${item.name} للسلة`, 'success');
+    
+    // تأثير بصري
+    const cartTotal = document.getElementById('cartTotal');
+    cartTotal.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+        cartTotal.style.transform = 'scale(1)';
+    }, 200);
+}
+
+// تحديث عرض السلة
+function updateCartDisplay() {
+    const cartItems = document.getElementById('cartItems');
+    const cartTotal = document.getElementById('cartTotal');
+    
+    if (cart.length === 0) {
+        cartItems.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-cart-x" style="font-size: 60px; opacity: 0.3; margin-bottom: 15px;"></i>
+                <p style="font-size: 18px; margin: 0;">السلة فارغة</p>
+                <small>اختر منتجات لإضافتها للسلة</small>
+            </div>
+        `;
+        cartTotal.textContent = 'الإجمالي: 0.00 ج.س';
+        return;
+    }
+    
+    let total = 0;
+    cartItems.innerHTML = '';
+    
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        const cartItem = document.createElement('div');
+        cartItem.className = 'pwa-cart-item';
+        cartItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div style="flex: 1;">
+                    <div class="pwa-cart-item-name">${item.name}</div>
+                    <div class="pwa-cart-item-details">
+                        ${item.price.toFixed(2)} ج.س × ${item.quantity} = ${itemTotal.toFixed(2)} ج.س
+                    </div>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 10px;">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${item.id})" 
+                            style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                    <span style="font-size: 18px; font-weight: 600; min-width: 30px; text-align: center;">${item.quantity}</span>
+                    <button class="btn btn-sm btn-outline-success" onclick="addQuantity(${item.id})"
+                            style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        cartItems.appendChild(cartItem);
+    });
+    
+    cartTotal.textContent = `الإجمالي: ${total.toFixed(2)} ج.س`;
+}
+
+// إزالة منتج من السلة
+function removeFromCart(itemId) {
+    const itemIndex = cart.findIndex(i => i.id === itemId);
+    if (itemIndex !== -1) {
+        if (cart[itemIndex].quantity > 1) {
+            cart[itemIndex].quantity -= 1;
+        } else {
+            cart.splice(itemIndex, 1);
+        }
+        updateCartDisplay();
+    }
+}
+
+// زيادة كمية منتج في السلة
+function addQuantity(itemId) {
+    const item = cart.find(i => i.id === itemId);
+    if (item) {
+        item.quantity += 1;
+        updateCartDisplay();
+    }
+}
+
+// مسح السلة
+function clearCart() {
+    if (cart.length === 0) {
+        showAlert('السلة فارغة بالفعل', 'info');
+        return;
+    }
+    
+    if (confirm('هل أنت متأكد من مسح السلة؟')) {
+        cart = [];
+        updateCartDisplay();
+        showAlert('تم مسح السلة', 'success');
+    }
+}
+
+// إتمام البيع
+async function checkout() {
+    if (cart.length === 0) {
+        showAlert('السلة فارغة', 'warning');
+        return;
+    }
+    
+    if (!confirm('هل أنت متأكد من إتمام البيع؟')) {
+        return;
+    }
+    
+    try {
+        const response = await apiCall('/api/checkout', {
+            method: 'POST',
+            body: JSON.stringify({ cart })
+        });
+        
+        if (response.success) {
+            showAlert(response.message, 'success');
+            cart = [];
+            updateCartDisplay();
+            loadItems(); // إعادة تحميل المنتجات لتحديث المخزون
+            
+            // تأثير بصري للنجاح
+            const cartTotal = document.getElementById('cartTotal');
+            cartTotal.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+            cartTotal.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                cartTotal.style.transform = 'scale(1)';
+            }, 500);
+        } else {
+            showAlert(response.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+    }
+}
+
+// البحث
+document.getElementById('searchInput').addEventListener('input', function() {
+    const query = this.value;
+    searchItems(query);
+});
+
+// تحميل المنتجات عند بدء الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    loadItems();
+    
+    // إضافة تأثيرات بصرية للمنتجات
+    setTimeout(() => {
+        const itemCards = document.querySelectorAll('.pwa-item-card');
+        itemCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    }, 500);
+});
+</script>
+{% endblock %}

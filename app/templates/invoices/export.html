@@ -30,9 +30,11 @@
                             <label for="endDate" class="form-label">إلى تاريخ</label>
                             <input type="date" class="form-control" id="endDate" name="end_date">
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-download me-1"></i>تصدير البيانات
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-download me-1"></i>تصدير البيانات
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -45,15 +47,11 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted">تصدير جميع الفواتير الموجودة في النظام</p>
-                    <button onclick="exportAllData()" class="btn btn-success">
-                        <i class="bi bi-download me-1"></i>تصدير الكل
-                    </button>
-                    <button onclick="testAPI()" class="btn btn-info">
-                        <i class="bi bi-gear me-1"></i>اختبار API
-                    </button>
-                    <button onclick="checkAPIStatus()" class="btn btn-warning">
-                        <i class="bi bi-info-circle me-1"></i>حالة API
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button onclick="exportAllData()" class="btn btn-success">
+                            <i class="bi bi-download me-1"></i>تصدير الكل
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,50 +296,5 @@ function viewExportDetails(type, date) {
     alert(`تفاصيل التصدير:\nالنوع: ${type}\nالتاريخ: ${date}`);
 }
 
-// Test API
-async function testAPI() {
-    try {
-        const response = await fetch('/invoices/api/test');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Response is not JSON');
-        }
-        
-        const data = await response.json();
-        alert(`API يعمل بشكل صحيح!\nالحالة: ${data.status}\nالرسالة: ${data.message}`);
-        
-    } catch (error) {
-        console.error('Error testing API:', error);
-        alert('خطأ في اختبار API: ' + error.message);
-    }
-}
-
-// Check API Status
-async function checkAPIStatus() {
-    try {
-        const response = await fetch('/invoices/api/status');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Response is not JSON');
-        }
-        
-        const data = await response.json();
-        alert(`حالة API:\nالحالة: ${data.status}\nالرسالة: ${data.message}\nالإصدار: ${data.version}\n\nEndpoints المتاحة:\n${data.endpoints.join('\n')}`);
-        
-    } catch (error) {
-        console.error('Error checking API status:', error);
-        alert('خطأ في فحص حالة API: ' + error.message);
-    }
-}
 </script>
 {% endblock %}

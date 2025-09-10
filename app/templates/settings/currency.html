@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-currency-exchange me-2"></i>إعدادات العملات</h2>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة للرئيسية
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-globe me-2"></i>العملات المتاحة</h5>
+                </div>
+                <div class="card-body">
+                    <form id="currency-settings-form">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="default_currency" class="form-label">العملة الافتراضية</label>
+                                <select class="form-select" id="default_currency" name="default_currency">
+                                    {% for currency in currency_settings.currencies %}
+                                    <option value="{{ currency.code }}" {{ 'selected' if currency.code == currency_settings.default_currency else '' }}>
+                                        {{ currency.name }} ({{ currency.code }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="mb-3">إدارة العملات</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>الرمز</th>
+                                                <th>الاسم (عربي)</th>
+                                                <th>الاسم (إنجليزي)</th>
+                                                <th>الرمز</th>
+                                                <th>موضع الرمز</th>
+                                                <th>الخانات العشرية</th>
+                                                <th>مفعل</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="currenciesTable">
+                                            {% for currency in currency_settings.currencies %}
+                                            <tr>
+                                                <td><strong>{{ currency.code }}</strong></td>
+                                                <td>{{ currency.name }}</td>
+                                                <td>{{ currency.name_en }}</td>
+                                                <td>{{ currency.symbol }}</td>
+                                                <td>
+                                                    <span class="badge bg-info">
+                                                        {{ 'قبل المبلغ' if currency.symbol_position == 'before' else 'بعد المبلغ' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ currency.decimal_places }}</td>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input currency-enabled" type="checkbox" 
+                                                               data-currency="{{ currency.code }}" 
+                                                               {{ 'checked' if currency.enabled else '' }}>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>حفظ الإعدادات
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetCurrencySettings()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-eye me-2"></i>معاينة العملة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="currency-preview">
+                        <div class="text-center mb-3">
+                            <h6>مثال على تنسيق العملة</h6>
+                        </div>
+                        <div class="border rounded p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>المبلغ:</span>
+                                <span id="preview_amount">100.50</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>التنسيق:</span>
+                                <span id="preview_formatted">100.50 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>العملة الافتراضية:</span>
+                                <span id="preview_currency">ريال سعودي (SAR)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات العملة</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>العملة الافتراضية:</strong><br>
+                            <span id="preview_default_currency">{{ currency_settings.default_currency }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>العملات المفعلة:</strong><br>
+                            <span id="preview_enabled_count">{{ currency_settings.currencies | selectattr('enabled') | list | length }}</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>إجمالي العملات:</strong><br>
+                            <span>{{ currency_settings.currencies | length }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currencies = {{ currency_settings.currencies | tojson }};
+let defaultCurrency = '{{ currency_settings.default_currency }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث المعاينة عند تغيير الحقول
+    document.getElementById('default_currency').addEventListener('change', updateCurrencyPreview);
+    
+    // تحديث المعاينة عند تغيير حالة العملات
+    document.querySelectorAll('.currency-enabled').forEach(checkbox => {
+        checkbox.addEventListener('change', updateCurrencyPreview);
+    });
+    
+    // معالجة إرسال النموذج
+    document.getElementById('currency-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveCurrencySettings();
+    });
+    
+    // تحديث المعاينة الأولية
+    updateCurrencyPreview();
+});
+
+function updateCurrencyPreview() {
+    const selectedCurrency = document.getElementById('default_currency').value;
+    const currency = currencies.find(c => c.code === selectedCurrency);
+    
+    if (currency) {
+        const amount = 100.50;
+        const formatted = formatCurrency(amount, currency);
+        
+        document.getElementById('preview_currency').textContent = `${currency.name} (${currency.code})`;
+        document.getElementById('preview_amount').textContent = amount.toFixed(currency.decimal_places);
+        document.getElementById('preview_formatted').textContent = formatted;
+        document.getElementById('preview_default_currency').textContent = selectedCurrency;
+    }
+    
+    // حساب العملات المفعلة
+    const enabledCount = document.querySelectorAll('.currency-enabled:checked').length;
+    document.getElementById('preview_enabled_count').textContent = enabledCount;
+}
+
+function formatCurrency(amount, currency) {
+    const symbol = currency.symbol;
+    const position = currency.symbol_position;
+    const decimalPlaces = currency.decimal_places;
+    
+    const formattedAmount = amount.toFixed(decimalPlaces);
+    
+    if (position === 'before') {
+        return `${symbol}${formattedAmount}`;
+    } else {
+        return `${formattedAmount} ${symbol}`;
+    }
+}
+
+async function saveCurrencySettings() {
+    const formData = new FormData(document.getElementById('currency-settings-form'));
+    const data = Object.fromEntries(formData);
+    
+    // تحديث حالة العملات
+    const updatedCurrencies = currencies.map(currency => {
+        const checkbox = document.querySelector(`input[data-currency="${currency.code}"]`);
+        return {
+            ...currency,
+            enabled: checkbox ? checkbox.checked : currency.enabled
+        };
+    });
+    
+    data.currencies = updatedCurrencies;
+    
+    // تحويل default_currency إلى string
+    data.default_currency = String(data.default_currency);
+    
+    try {
+        const response = await fetch('/settings/api/currency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم حفظ إعدادات العملات بنجاح!', 'success');
+            // تحديث البيانات المحلية
+            currencies = updatedCurrencies;
+            defaultCurrency = data.default_currency;
+        } else {
+            showNotification('خطأ في حفظ الإعدادات: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving currency settings:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+async function resetCurrencySettings() {
+    if (confirm('هل أنت متأكد من إعادة تعيين إعدادات العملات إلى القيم الافتراضية؟')) {
+        try {
+            const response = await fetch('/settings/api/currency', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    default_currency: 'SAR',
+                    currencies: [
+                        {
+                            code: 'SAR',
+                            name: 'ريال سعودي',
+                            name_en: 'Saudi Riyal',
+                            symbol: 'ر.س',
+                            symbol_position: 'after',
+                            decimal_places: 2,
+                            enabled: true
+                        },
+                        {
+                            code: 'USD',
+                            name: 'دولار أمريكي',
+                            name_en: 'US Dollar',
+                            symbol: '$',
+                            symbol_position: 'before',
+                            decimal_places: 2,
+                            enabled: false
+                        },
+                        {
+                            code: 'EUR',
+                            name: 'يورو',
+                            name_en: 'Euro',
+                            symbol: '€',
+                            symbol_position: 'after',
+                            decimal_places: 2,
+                            enabled: false
+                        }
+                    ]
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('تم إعادة تعيين إعدادات العملات بنجاح!', 'success');
+                location.reload();
+            } else {
+                showNotification('خطأ في إعادة تعيين الإعدادات: ' + result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error resetting currency settings:', error);
+            showNotification('خطأ في الاتصال بالخادم', 'danger');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

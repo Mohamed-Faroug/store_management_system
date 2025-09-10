@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-database me-2"></i>إدارة البيانات</h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('data_management.import_data') }}" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i>استيراد البيانات
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تصدير البيانات -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-download me-2"></i>تصدير البيانات</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">قم بتصدير البيانات الموجودة في النظام إلى ملفات Excel</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-box-seam display-4 text-primary mb-3"></i>
+                                    <h6 class="card-title">الأصناف</h6>
+                                    <p class="card-text small text-muted">تصدير جميع الأصناف مع تفاصيلها</p>
+                                    <a href="{{ url_for('data_management.export_data', type='items') }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-download me-1"></i>تصدير
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-tags display-4 text-info mb-3"></i>
+                                    <h6 class="card-title">الفئات</h6>
+                                    <p class="card-text small text-muted">تصدير جميع فئات الأصناف</p>
+                                    <a href="{{ url_for('data_management.export_data', type='categories') }}" 
+                                       class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-download me-1"></i>تصدير
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-receipt display-4 text-warning mb-3"></i>
+                                    <h6 class="card-title">الفواتير</h6>
+                                    <p class="card-text small text-muted">تصدير جميع الفواتير</p>
+                                    <a href="{{ url_for('data_management.export_data', type='invoices') }}" 
+                                       class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-download me-1"></i>تصدير
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="card h-100 border-danger">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up display-4 text-danger mb-3"></i>
+                                    <h6 class="card-title">المبيعات</h6>
+                                    <p class="card-text small text-muted">تصدير تفاصيل المبيعات</p>
+                                    <a href="{{ url_for('data_management.export_data', type='sales') }}" 
+                                       class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-download me-1"></i>تصدير
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قوالب البيانات -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-excel me-2"></i>قوالب البيانات</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">قم بتحميل قوالب Excel لاستيراد البيانات الجديدة</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-box-seam display-4 text-success mb-3"></i>
+                                    <h6 class="card-title">قالب الأصناف</h6>
+                                    <p class="card-text small text-muted">قالب Excel لاستيراد الأصناف الجديدة</p>
+                                    <a href="{{ url_for('data_management.download_template', template_type='items') }}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-download me-1"></i>تحميل القالب
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-tags display-4 text-info mb-3"></i>
+                                    <h6 class="card-title">قالب الفئات</h6>
+                                    <p class="card-text small text-muted">قالب Excel لاستيراد الفئات الجديدة</p>
+                                    <a href="{{ url_for('data_management.download_template', template_type='categories') }}" 
+                                       class="btn btn-info btn-sm">
+                                        <i class="bi bi-download me-1"></i>تحميل القالب
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>إحصائيات سريعة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-primary" id="items-count">-</h4>
+                                <p class="text-muted mb-0">إجمالي الأصناف</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-info" id="categories-count">-</h4>
+                                <p class="text-muted mb-0">إجمالي الفئات</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <h4 class="text-warning" id="invoices-count">-</h4>
+                                <p class="text-muted mb-0">إجمالي الفواتير</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-danger" id="sales-count">-</h4>
+                            <p class="text-muted mb-0">إجمالي المبيعات</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// تحميل الإحصائيات
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics();
+});
+
+async function loadStatistics() {
+    try {
+        // تحميل إحصائيات الأصناف
+        const itemsResponse = await fetch('/api/statistics/items');
+        const itemsData = await itemsResponse.json();
+        document.getElementById('items-count').textContent = itemsData.count || 0;
+        
+        // تحميل إحصائيات الفئات
+        const categoriesResponse = await fetch('/api/statistics/categories');
+        const categoriesData = await categoriesResponse.json();
+        document.getElementById('categories-count').textContent = categoriesData.count || 0;
+        
+        // تحميل إحصائيات الفواتير
+        const invoicesResponse = await fetch('/api/statistics/invoices');
+        const invoicesData = await invoicesResponse.json();
+        document.getElementById('invoices-count').textContent = invoicesData.count || 0;
+        
+        // تحميل إحصائيات المبيعات
+        const salesResponse = await fetch('/api/statistics/sales');
+        const salesData = await salesResponse.json();
+        document.getElementById('sales-count').textContent = salesData.count || 0;
+        
+    } catch (error) {
+        console.error('خطأ في تحميل الإحصائيات:', error);
+    }
+}
+</script>
+{% endblock %}

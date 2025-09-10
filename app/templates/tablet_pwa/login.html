@@ -1,0 +1,88 @@
+{% extends "tablet_pwa/base.html" %}
+
+{% block title %}تسجيل الدخول - نظام إدارة المخزون{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <div class="pwa-card">
+                <div class="text-center mb-5">
+                    <i class="bi bi-shop" style="font-size: 80px; color: #3498db; margin-bottom: 20px;"></i>
+                    <h2 class="mb-3" style="color: #2c3e50;">تسجيل الدخول</h2>
+                    <p class="text-muted" style="font-size: 18px;">نظام إدارة المخزون - مخزن الزينة</p>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label class="pwa-label">اسم المستخدم</label>
+                        <input type="text" class="pwa-input" id="username" name="username" 
+                               placeholder="أدخل اسم المستخدم" required autocomplete="username">
+                    </div>
+                    
+                    <div class="mb-5">
+                        <label class="pwa-label">كلمة المرور</label>
+                        <input type="password" class="pwa-input" id="password" name="password" 
+                               placeholder="أدخل كلمة المرور" required autocomplete="current-password">
+                    </div>
+                    
+                    <button type="submit" class="pwa-btn pwa-btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right me-3"></i>تسجيل الدخول
+                    </button>
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted" style="font-size: 16px;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        المستخدم الافتراضي: admin / admin
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        showAlert('يرجى إدخال اسم المستخدم وكلمة المرور', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await apiCall('/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password })
+        });
+        
+        if (response.success) {
+            showAlert('تم تسجيل الدخول بنجاح', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        } else {
+            showAlert(response.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+    }
+});
+
+// Auto-focus on username field
+document.getElementById('username').focus();
+
+// Add enter key support
+document.getElementById('password').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+});
+</script>
+{% endblock %}

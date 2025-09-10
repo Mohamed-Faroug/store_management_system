@@ -192,10 +192,10 @@
         
         <!-- Company Info -->
         <div class="company-info">
-            <h3>مخزن الزينة - إدارة المخزون</h3>
-            <p><strong>العنوان:</strong> شارع الملك فيصل، الرياض، المملكة العربية السعودية</p>
-            <p><strong>الهاتف:</strong> +966 50 123 4567 | <strong>البريد الإلكتروني:</strong> info@zina-store.com</p>
-            <p><strong>الرقم الضريبي:</strong> 123456789012345 | <strong>السجل التجاري:</strong> 1010123456</p>
+            <h3>{{ store_settings.store_name or 'مخزن الزينة - إدارة المخزون' }}</h3>
+            <p><strong>العنوان:</strong> {{ store_settings.store_address or 'شارع الملك فيصل، الرياض، المملكة العربية السعودية' }}</p>
+            <p><strong>الهاتف:</strong> {{ store_settings.store_phone or '+966 50 123 4567' }} | <strong>البريد الإلكتروني:</strong> {{ store_settings.store_email or 'info@zina-store.com' }}</p>
+            <p><strong>الرقم الضريبي:</strong> {{ store_settings.tax_number or '123456789012345' }} | <strong>السجل التجاري:</strong> {{ store_settings.commercial_register or '1010123456' }}</p>
         </div>
         
         <!-- Invoice Info -->
@@ -207,7 +207,7 @@
             </div>
             <div class="right">
                 <h3>بيانات الفاتورة:</h3>
-                <p><strong>طريقة الدفع:</strong> {{ 'نقدي' if invoice['payment_method'] == 'cash' else 'بطاقة' }}</p>
+                <p><strong>طريقة الدفع:</strong> {{ payment_method_name }}</p>
                 <p><strong>أنشأها:</strong> {{ invoice['created_by_name'] }}</p>
             </div>
         </div>

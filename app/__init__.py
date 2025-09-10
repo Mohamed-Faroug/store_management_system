@@ -3,53 +3,46 @@
 نظام إدارة المخزون - مخزن الزينة
 تطبيق Flask لإدارة المخزون والمبيعات
 
-جميع الحقوق محفوظة © 2025
-تم تطوير هذا النظام بواسطة: محمد فاروق
-تاريخ آخر تحديث: 9/9/2025
+المطور: محمد فاروق
+التاريخ: 10/9/2025
 """
 
 from flask import Flask
 import os
+import sys
 
 def create_app():
+    """إنشاء تطبيق Flask"""
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
     
-    # إعداد مسارات القوالب والملفات الثابتة للـ EXE
-    import sys
+    # إعداد مسارات الملفات
     if getattr(sys, 'frozen', False):
-        # إذا كان التطبيق يعمل كـ EXE
         base_path = os.path.dirname(sys.executable)
-        template_path = os.path.join(base_path, 'app', 'templates')
-        static_path = os.path.join(base_path, 'app', 'static')
-        database_path = os.path.join(base_path, 'inventory.db')
-        
-        if os.path.exists(template_path):
-            app.template_folder = template_path
-        if os.path.exists(static_path):
-            app.static_folder = static_path
+        app.config['DATABASE'] = os.path.join(base_path, 'inventory.db')
     else:
-        # إذا كان التطبيق يعمل كـ Python script
-        database_path = os.path.join(os.path.dirname(__file__), '..', 'inventory.db')
+        app.config['DATABASE'] = os.path.join(os.path.dirname(__file__), '..', 'inventory.db')
     
-    app.config['DATABASE'] = database_path
-    
-    # Initialize database
+    # تهيئة قاعدة البيانات
     from .models.database import init_db, close_db
     with app.app_context():
         try:
             init_db()
         except Exception as e:
-            print(f"Database initialization warning: {e}")
-            # Continue even if database init fails - it will be created on first access
-    
-    # Register database teardown handler
+            print(f"Database warning: {e}")
     app.teardown_appcontext(close_db)
     
-    # Register blueprints
-    from .views import main, auth, items, sales, purchases, reports, users, categories, invoices, stock
+    # تسجيل المعالجات
+    from .utils.context_processors import inject_store_settings
+    app.context_processor(inject_store_settings)
     
-    # Register blueprints with URL prefixes
+    # تسجيل Blueprints
+    from .views import (
+        main, auth, items, sales, purchases, reports, 
+        users, categories, invoices, stock, settings, 
+        advanced_settings, data_management, api
+    )
+    
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(items.bp, url_prefix='/items')
@@ -60,5 +53,9 @@ def create_app():
     app.register_blueprint(categories.bp, url_prefix='/categories')
     app.register_blueprint(invoices.bp, url_prefix='/invoices')
     app.register_blueprint(stock.bp, url_prefix='/stock')
+    app.register_blueprint(settings.settings_bp)
+    app.register_blueprint(advanced_settings.advanced_settings_bp)
+    app.register_blueprint(data_management.data_management_bp)
+    app.register_blueprint(api.api_bp)
     
     return app

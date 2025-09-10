@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 الصفحة الرئيسية ولوحة التحكم
+
+المطور: محمد فاروق
+التاريخ: 10/9/2025
 """
 
-from flask import Blueprint, render_template, session, g, jsonify, request, send_file
+from flask import Blueprint, render_template, session, jsonify, request, redirect, url_for
 from ..models.database import get_db
 from ..utils.auth import login_required
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from backup import BackupManager
+from datetime import datetime
 
 bp = Blueprint('main', __name__)
 
@@ -17,200 +17,121 @@ bp = Blueprint('main', __name__)
 @login_required()
 def index():
     """الصفحة الرئيسية - لوحة التحكم"""
-    # توجيه الكاشير إلى نقطة البيع
+    # توجيه الكاشير إلى نقطة البيع مباشرة
     if session.get('role') == 'clerk':
-        from flask import redirect, url_for
         return redirect(url_for('sales.new'))
     
-    db = get_db()
-    
-    # إحصائيات عامة
-    total_items = db.execute('SELECT COUNT(*) as c FROM items').fetchone()['c']
-    total_qty = db.execute('SELECT IFNULL(SUM(quantity),0) as s FROM items').fetchone()['s']
-    low_stock = db.execute('SELECT COUNT(*) as c FROM items WHERE quantity <= reorder_level').fetchone()['c']
-    
-    # مبيعات اليوم
-    today_sales = db.execute('''
-        SELECT IFNULL(SUM(total_price), 0) as total
-        FROM sales 
-        WHERE DATE(created_at) = DATE('now')
-    ''').fetchone()['total']
-    
-    # عدد الفواتير اليوم
-    today_invoices = db.execute('''
-        SELECT COUNT(*) as count
-        FROM invoices 
-        WHERE DATE(created_at) = DATE('now')
-    ''').fetchone()['count']
-    
-    # إجمالي المنتجات
-    total_products = db.execute('SELECT COUNT(*) as c FROM items').fetchone()['c']
-    
-    # المبيعات الأخيرة (آخر 10 مبيعات)
-    recent_sales = db.execute('''
-        SELECT s.id, i.name, s.quantity, s.unit_price, s.total_price, s.created_at
-        FROM sales s JOIN items i ON i.id = s.item_id
-        ORDER BY s.created_at DESC LIMIT 10
-    ''').fetchall()
-    
-    # أكثر المنتجات مبيعاً (آخر 7 أيام)
-    top_selling_items = db.execute('''
-        SELECT i.name, SUM(s.quantity) as total_sold, SUM(s.total_price) as total_revenue
-        FROM sales s 
-        JOIN items i ON i.id = s.item_id
-        WHERE s.created_at >= DATE('now', '-7 days')
-        GROUP BY i.id, i.name
-        ORDER BY total_sold DESC
-        LIMIT 5
-    ''').fetchall()
-    
-    # إحصائيات الفواتير الأخيرة
-    recent_invoices = db.execute('''
-        SELECT i.id, i.customer_name, i.total_amount, i.created_at, u.username as created_by
-        FROM invoices i
-        LEFT JOIN users u ON u.id = i.created_by
-        ORDER BY i.created_at DESC
-        LIMIT 5
-    ''').fetchall()
-    
-    return render_template('dashboard.html', data={
-        'total_items': total_items,
-        'total_qty': total_qty,
-        'low_stock': low_stock,
-        'today_sales': today_sales,
-        'today_invoices': today_invoices,
-        'total_products': total_products,
-        'recent_sales': recent_sales,
-        'top_selling_items': top_selling_items,
-        'recent_invoices': recent_invoices
-    })
-
-@bp.route('/api/backup/create', methods=['POST'])
-@login_required()
-def create_backup():
-    """إنشاء نسخة احتياطية"""
     try:
-        # التحقق من الصلاحيات (المدير فقط)
-        if session.get('role') != 'manager':
-            return jsonify({
-                'success': False,
-                'message': 'ليس لديك صلاحية لإنشاء نسخة احتياطية'
-            }), 403
+        db = get_db()
         
-        backup_manager = BackupManager()
-        result = backup_manager.create_backup()
+        # جمع الإحصائيات الأساسية
+        stats = _get_dashboard_stats(db)
         
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'message': result['message'],
-                'backup_name': result['backup_name'],
-                'size': result['size']
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': result['message']
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'خطأ في إنشاء النسخة الاحتياطية: {str(e)}'
-        }), 500
-
-@bp.route('/api/backup/list')
-@login_required()
-def list_backups():
-    """قائمة النسخ الاحتياطية"""
-    try:
-        # التحقق من الصلاحيات (المدير فقط)
-        if session.get('role') != 'manager':
-            return jsonify({
-                'success': False,
-                'message': 'ليس لديك صلاحية لعرض النسخ الاحتياطية'
-            }), 403
+        # جمع البيانات الإضافية
+        recent_data = _get_recent_data(db)
         
-        backup_manager = BackupManager()
-        backups = backup_manager.list_backups()
+        # تجميع البيانات للعرض
+        context = {
+            'total_items': stats['total_items'],
+            'total_qty': stats['total_qty'],
+            'low_stock': stats['low_stock'],
+            'today_sales': stats['today_sales'],
+            'today_invoices': stats['today_invoices'],
+            'recent_sales': recent_data['sales'],
+            'low_stock_items': recent_data['low_stock'],
+            'recent_invoices': recent_data['invoices']
+        }
         
-        return jsonify({
-            'success': True,
-            'backups': backups
-        })
+        return render_template('dashboard.html', **context)
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'خطأ في جلب قائمة النسخ الاحتياطية: {str(e)}'
-        }), 500
+        print(f"❌ خطأ في تحميل لوحة التحكم: {e}")
+        return render_template('dashboard.html', 
+                             total_items=0,
+                             total_qty=0,
+                             low_stock=0,
+                             today_sales=0,
+                             today_invoices=0,
+                             recent_sales=[], 
+                             low_stock_items=[], 
+                             recent_invoices=[])
 
-@bp.route('/api/backup/download/<backup_name>')
-@login_required()
-def download_backup(backup_name):
-    """تحميل نسخة احتياطية"""
+def _get_dashboard_stats(db):
+    """جمع الإحصائيات الأساسية للوحة التحكم"""
     try:
-        # التحقق من الصلاحيات (المدير فقط)
-        if session.get('role') != 'manager':
-            return jsonify({
-                'success': False,
-                'message': 'ليس لديك صلاحية لتحميل النسخ الاحتياطية'
-            }), 403
+        # إحصائيات المخزون
+        total_items = db.execute('SELECT COUNT(*) as c FROM items').fetchone()['c']
+        total_qty = db.execute('SELECT IFNULL(SUM(quantity),0) as s FROM items').fetchone()['s']
+        low_stock = db.execute('SELECT COUNT(*) as c FROM items WHERE quantity <= reorder_level').fetchone()['c']
         
-        backup_manager = BackupManager()
-        backup_path = os.path.join(backup_manager.backup_dir, backup_name)
+        # إحصائيات المبيعات اليوم
+        today_sales = db.execute('''
+            SELECT IFNULL(SUM(total_price), 0) as total
+            FROM sales 
+            WHERE DATE(created_at) = DATE('now')
+        ''').fetchone()['total']
         
-        if not os.path.exists(backup_path):
-            return jsonify({
-                'success': False,
-                'message': 'النسخة الاحتياطية غير موجودة'
-            }), 404
+        today_invoices = db.execute('''
+            SELECT COUNT(*) as count
+            FROM invoices 
+            WHERE DATE(created_at) = DATE('now')
+        ''').fetchone()['count']
         
-        return send_file(backup_path, as_attachment=True, download_name=backup_name)
+        return {
+            'total_items': total_items,
+            'total_qty': total_qty,
+            'low_stock': low_stock,
+            'today_sales': today_sales,
+            'today_invoices': today_invoices
+        }
         
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'خطأ في تحميل النسخة الاحتياطية: {str(e)}'
-        }), 500
+        print(f"❌ خطأ في جمع الإحصائيات: {e}")
+        return {
+            'total_items': 0,
+            'total_qty': 0,
+            'low_stock': 0,
+            'today_sales': 0,
+            'today_invoices': 0
+        }
 
-@bp.route('/api/backup/restore', methods=['POST'])
-@login_required()
-def restore_backup():
-    """استعادة نسخة احتياطية"""
+def _get_recent_data(db):
+    """جمع البيانات الحديثة للعرض"""
     try:
-        # التحقق من الصلاحيات (المدير فقط)
-        if session.get('role') != 'manager':
-            return jsonify({
-                'success': False,
-                'message': 'ليس لديك صلاحية لاستعادة النسخ الاحتياطية'
-            }), 403
+        # المبيعات الأخيرة (آخر 10 مبيعات)
+        recent_sales = db.execute('''
+            SELECT s.id, i.name, s.quantity, s.unit_price, s.total_price, s.created_at
+            FROM sales s JOIN items i ON i.id = s.item_id
+            ORDER BY s.created_at DESC LIMIT 10
+        ''').fetchall()
         
-        data = request.get_json()
-        backup_name = data.get('backup_name')
+        # المنتجات على وشك النفاذ
+        low_stock_items = db.execute('''
+            SELECT id, name, quantity, reorder_level
+            FROM items
+            WHERE quantity <= reorder_level
+            ORDER BY quantity ASC LIMIT 5
+        ''').fetchall()
         
-        if not backup_name:
-            return jsonify({
-                'success': False,
-                'message': 'اسم النسخة الاحتياطية مطلوب'
-            }), 400
+        # إحصائيات الفواتير الأخيرة
+        recent_invoices = db.execute('''
+            SELECT i.id, i.customer_name, i.total_amount, i.created_at, u.username as created_by
+            FROM invoices i
+            LEFT JOIN users u ON u.id = i.created_by
+            ORDER BY i.created_at DESC
+            LIMIT 5
+        ''').fetchall()
         
-        backup_manager = BackupManager()
-        result = backup_manager.restore_backup(backup_name)
+        return {
+            'sales': recent_sales,
+            'low_stock': low_stock_items,
+            'invoices': recent_invoices
+        }
         
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'message': result['message']
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': result['message']
-            }), 500
-            
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'خطأ في استعادة النسخة الاحتياطية: {str(e)}'
-        }), 500
+        print(f"❌ خطأ في جمع البيانات الحديثة: {e}")
+        return {
+            'sales': [],
+            'low_stock': [],
+            'invoices': []
+        }

@@ -33,7 +33,7 @@
             <td><strong class="text-success">{{ '%.2f'|format(purchase['final_amount']) }} ج.س</strong></td>
             <td>
               <span class="badge {% if purchase['payment_method'] == 'cash' %}bg-success{% else %}bg-info{% endif %}">
-                {{ 'نقدي' if purchase['payment_method'] == 'cash' else 'بطاقة' }}
+                {{ purchase['payment_method_name'] }}
               </span>
             </td>
             <td>{{ purchase['created_by_name'] or '-' }}</td>

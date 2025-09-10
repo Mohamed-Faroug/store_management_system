@@ -17,7 +17,7 @@
           </div>
           <div class="col-md-6">
             <h6>بيانات الشراء:</h6>
-            <p><strong>طريقة الدفع:</strong> {{ 'نقدي' if purchase['payment_method'] == 'cash' else 'بطاقة' }}</p>
+            <p><strong>طريقة الدفع:</strong> {{ payment_method_name }}</p>
             <p><strong>أنشأها:</strong> {{ purchase['created_by_name'] or '-' }}</p>
           </div>
         </div>

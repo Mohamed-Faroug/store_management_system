@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-upload me-2"></i>استيراد البيانات</h2>
+                <a href="{{ url_for('data_management.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up me-2"></i>رفع ملف البيانات</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="import-form">
+                        <div class="mb-4">
+                            <label for="import_type" class="form-label"><strong>نوع البيانات</strong></label>
+                            <select class="form-select" id="import_type" name="import_type" required>
+                                <option value="">اختر نوع البيانات</option>
+                                <option value="items">الأصناف</option>
+                                <option value="categories">الفئات</option>
+                            </select>
+                            <div class="form-text">اختر نوع البيانات التي تريد استيرادها</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="file" class="form-label"><strong>ملف البيانات</strong></label>
+                            <input type="file" class="form-control" id="file" name="file" 
+                                   accept=".csv,.xlsx,.xls" required>
+                            <div class="form-text">الملفات المدعومة: CSV, Excel (.xlsx, .xls)</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="import-btn">
+                                <i class="bi bi-upload me-1"></i>بدء الاستيراد
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- تعليمات الاستيراد -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>تعليمات الاستيراد</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-primary">للأصناف:</h6>
+                        <ul class="small mb-0">
+                            <li><strong>name:</strong> اسم الصنف (مطلوب)</li>
+                            <li><strong>price:</strong> السعر (مطلوب)</li>
+                            <li><strong>quantity:</strong> الكمية (مطلوب)</li>
+                            <li><strong>sku:</strong> كود الصنف (اختياري)</li>
+                            <li><strong>min_quantity:</strong> الحد الأدنى (اختياري)</li>
+                            <li><strong>category_name:</strong> اسم الفئة (اختياري)</li>
+                            <li><strong>description:</strong> الوصف (اختياري)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-primary">للفئات:</h6>
+                        <ul class="small mb-0">
+                            <li><strong>name:</strong> اسم الفئة (مطلوب)</li>
+                            <li><strong>description:</strong> الوصف (اختياري)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تحميل القوالب -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-download me-2"></i>تحميل القوالب</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">قم بتحميل قوالب Excel لاستيراد البيانات</p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('data_management.download_template', template_type='items') }}" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-download me-1"></i>قالب الأصناف
+                        </a>
+                        <a href="{{ url_for('data_management.download_template', template_type='categories') }}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-download me-1"></i>قالب الفئات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معاينة البيانات -->
+    <div class="row mt-4" id="preview-section" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-eye me-2"></i>معاينة البيانات</h5>
+                </div>
+                <div class="card-body">
+                    <div id="preview-content">
+                        <!-- سيتم ملؤها بواسطة JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const importTypeSelect = document.getElementById('import_type');
+    const importForm = document.getElementById('import-form');
+    const importBtn = document.getElementById('import-btn');
+    
+    // معاينة الملف عند اختياره
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            previewFile(this.files[0]);
+        }
+    });
+    
+    // تغيير نوع الاستيراد
+    importTypeSelect.addEventListener('change', function() {
+        updateInstructions();
+    });
+    
+    // إرسال النموذج
+    importForm.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            return;
+        }
+        
+        // إظهار مؤشر التحميل
+        importBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>جاري الاستيراد...';
+        importBtn.disabled = true;
+    });
+    
+    function validateForm() {
+        const importType = importTypeSelect.value;
+        const file = fileInput.files[0];
+        
+        if (!importType) {
+            alert('يرجى اختيار نوع البيانات');
+            return false;
+        }
+        
+        if (!file) {
+            alert('يرجى اختيار ملف');
+            return false;
+        }
+        
+        // التحقق من نوع الملف
+        const allowedTypes = ['.csv', '.xlsx', '.xls'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(fileExtension)) {
+            alert('نوع الملف غير مدعوم. الملفات المدعومة: CSV, Excel');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function updateInstructions() {
+        const importType = importTypeSelect.value;
+        const instructionsCard = document.querySelector('.card-header.bg-info + .card-body');
+        
+        if (importType === 'items') {
+            instructionsCard.innerHTML = `
+                <div class="mb-3">
+                    <h6 class="text-primary">للأصناف:</h6>
+                    <ul class="small mb-0">
+                        <li><strong>name:</strong> اسم الصنف (مطلوب)</li>
+                        <li><strong>price:</strong> السعر (مطلوب)</li>
+                        <li><strong>quantity:</strong> الكمية (مطلوب)</li>
+                        <li><strong>sku:</strong> كود الصنف (اختياري)</li>
+                        <li><strong>min_quantity:</strong> الحد الأدنى (اختياري)</li>
+                        <li><strong>category_name:</strong> اسم الفئة (اختياري)</li>
+                        <li><strong>description:</strong> الوصف (اختياري)</li>
+                    </ul>
+                </div>
+            `;
+        } else if (importType === 'categories') {
+            instructionsCard.innerHTML = `
+                <div class="mb-3">
+                    <h6 class="text-primary">للفئات:</h6>
+                    <ul class="small mb-0">
+                        <li><strong>name:</strong> اسم الفئة (مطلوب)</li>
+                        <li><strong>description:</strong> الوصف (اختياري)</li>
+                    </ul>
+                </div>
+            `;
+        }
+    }
+    
+    function previewFile(file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const data = e.target.result;
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            
+            if (fileExtension === 'csv') {
+                previewCSV(data);
+            } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+                previewExcel(data);
+            }
+        };
+        
+        if (file.name.endsWith('.csv')) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
+        }
+    }
+    
+    function previewCSV(csvText) {
+        const lines = csvText.split('\n');
+        const headers = lines[0].split(',');
+        const previewRows = lines.slice(1, 6); // أول 5 صفوف
+        
+        let html = '<div class="table-responsive"><table class="table table-sm table-bordered">';
+        html += '<thead><tr>';
+        headers.forEach(header => {
+            html += `<th>${header.trim()}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        
+        previewRows.forEach(row => {
+            if (row.trim()) {
+                html += '<tr>';
+                row.split(',').forEach(cell => {
+                    html += `<td>${cell.trim()}</td>`;
+                });
+                html += '</tr>';
+            }
+        });
+        
+        html += '</tbody></table></div>';
+        html += `<p class="small text-muted">معاينة أول ${previewRows.length} صفوف</p>`;
+        
+        document.getElementById('preview-content').innerHTML = html;
+        document.getElementById('preview-section').style.display = 'block';
+    }
+    
+    function previewExcel(data) {
+        // معاينة Excel تتطلب مكتبة إضافية
+        document.getElementById('preview-content').innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                تم اختيار ملف Excel. سيتم معاينة البيانات بعد رفع الملف.
+            </div>
+        `;
+        document.getElementById('preview-section').style.display = 'block';
+    }
+    
+    function resetForm() {
+        importForm.reset();
+        document.getElementById('preview-section').style.display = 'none';
+        importBtn.innerHTML = '<i class="bi bi-upload me-1"></i>بدء الاستيراد';
+        importBtn.disabled = false;
+    }
+});
+</script>
+{% endblock %}

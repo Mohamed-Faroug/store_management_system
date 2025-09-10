@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-credit-card me-2"></i>إدارة طرق الدفع</h2>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-1"></i>العودة للرئيسية
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>طرق الدفع المتاحة</h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="paymentMethodsContainer">
+                    {% for method in payment_methods %}
+                    <div class="col-md-6 mb-3" data-method-id="{{ method.id }}">
+                        <div class="card border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi {{ method.icon }} me-2 text-{{ method.color }}"></i>
+                                        <div>
+                                            <h6 class="mb-0">{{ method.name }}</h6>
+                                            <small class="text-muted">{{ method.name_en }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge {% if method.enabled %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'مفعل' if method.enabled else 'معطل' }}
+                                    </span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editPaymentMethod('{{ method.id }}')">
+                                        <i class="bi bi-pencil me-1"></i>تعديل
+                                    </button>
+                                    {% if method.id not in ['cash', 'card'] %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deletePaymentMethod('{{ method.id }}')">
+                                        <i class="bi bi-trash me-1"></i>حذف
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary" onclick="showAddForm()">
+                        <i class="bi bi-plus-circle me-1"></i>إضافة طريقة دفع جديدة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نموذج إضافة طريقة دفع -->
+<div class="card mt-4" id="addForm" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>إضافة طريقة دفع جديدة</h5>
+    </div>
+    <div class="card-body">
+        <form id="addPaymentMethodForm" class="needs-validation" novalidate>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="method_name" class="form-label">الاسم (عربي) *</label>
+                        <input type="text" class="form-control" id="method_name" name="name" required>
+                        <div class="invalid-feedback">يرجى إدخال الاسم بالعربية</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="method_name_en" class="form-label">الاسم (إنجليزي) *</label>
+                        <input type="text" class="form-control" id="method_name_en" name="name_en" required>
+                        <div class="invalid-feedback">يرجى إدخال الاسم بالإنجليزية</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="method_icon" class="form-label">الأيقونة</label>
+                        <select class="form-select" id="method_icon" name="icon">
+                            <option value="bi-cash">نقدي</option>
+                            <option value="bi-credit-card">بطاقة ائتمان</option>
+                            <option value="bi-bank">تحويل بنكي</option>
+                            <option value="bi-file-text">شيك</option>
+                            <option value="bi-phone">دفع إلكتروني</option>
+                            <option value="bi-wallet">محفظة إلكترونية</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="method_color" class="form-label">اللون</label>
+                        <select class="form-select" id="method_color" name="color">
+                            <option value="primary">أزرق</option>
+                            <option value="success">أخضر</option>
+                            <option value="info">أزرق فاتح</option>
+                            <option value="warning">أصفر</option>
+                            <option value="danger">أحمر</option>
+                            <option value="secondary">رمادي</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="method_enabled" name="enabled" checked>
+                    <label class="form-check-label" for="method_enabled">
+                        مفعل
+                    </label>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" onclick="savePaymentMethod()">
+                    <i class="bi bi-check-circle me-1"></i>حفظ
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="hideAddForm()">
+                    <i class="bi bi-x-circle me-1"></i>إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- نموذج تعديل طريقة دفع -->
+<div class="card mt-4" id="editForm" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-pencil me-2"></i>تعديل طريقة الدفع</h5>
+    </div>
+    <div class="card-body">
+        <form id="editPaymentMethodForm" class="needs-validation" novalidate>
+            <input type="hidden" id="edit_method_id" name="id">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="edit_method_name" class="form-label">الاسم (عربي) *</label>
+                        <input type="text" class="form-control" id="edit_method_name" name="name" required>
+                        <div class="invalid-feedback">يرجى إدخال الاسم بالعربية</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="edit_method_name_en" class="form-label">الاسم (إنجليزي) *</label>
+                        <input type="text" class="form-control" id="edit_method_name_en" name="name_en" required>
+                        <div class="invalid-feedback">يرجى إدخال الاسم بالإنجليزية</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="edit_method_icon" class="form-label">الأيقونة</label>
+                        <select class="form-select" id="edit_method_icon" name="icon">
+                            <option value="bi-cash">نقدي</option>
+                            <option value="bi-credit-card">بطاقة ائتمان</option>
+                            <option value="bi-bank">تحويل بنكي</option>
+                            <option value="bi-file-text">شيك</option>
+                            <option value="bi-phone">دفع إلكتروني</option>
+                            <option value="bi-wallet">محفظة إلكترونية</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="edit_method_color" class="form-label">اللون</label>
+                        <select class="form-select" id="edit_method_color" name="color">
+                            <option value="primary">أزرق</option>
+                            <option value="success">أخضر</option>
+                            <option value="info">أزرق فاتح</option>
+                            <option value="warning">أصفر</option>
+                            <option value="danger">أحمر</option>
+                            <option value="secondary">رمادي</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="edit_method_enabled" name="enabled">
+                    <label class="form-check-label" for="edit_method_enabled">
+                        مفعل
+                    </label>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" onclick="updatePaymentMethod()">
+                    <i class="bi bi-check-circle me-1"></i>تحديث
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="hideEditForm()">
+                    <i class="bi bi-x-circle me-1"></i>إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let paymentMethods = {{ payment_methods | tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Payment methods page loaded');
+    console.log('Initial payment methods:', paymentMethods);
+    
+    // تحديث العرض
+    updatePaymentMethodsDisplay();
+    // تحميل البيانات من الخادم
+    loadPaymentMethods();
+    
+    // Bootstrap form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+});
+
+function updatePaymentMethodsDisplay() {
+    const container = document.getElementById('paymentMethodsContainer');
+    if (!container) {
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (!paymentMethods || paymentMethods.length === 0) {
+        container.innerHTML = `
+            <div class="col-12 text-center text-muted py-4">
+                <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                لا توجد طرق دفع
+            </div>
+        `;
+        return;
+    }
+    
+    paymentMethods.forEach(method => {
+        const methodCard = document.createElement('div');
+        methodCard.className = 'col-md-6 mb-3';
+        methodCard.setAttribute('data-method-id', method.id);
+        methodCard.innerHTML = `
+            <div class="card border">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi ${method.icon} me-2 text-${method.color}"></i>
+                            <div>
+                                <h6 class="mb-0">${method.name}</h6>
+                                <small class="text-muted">${method.name_en}</small>
+                            </div>
+                        </div>
+                        <span class="badge ${method.enabled ? 'bg-success' : 'bg-danger'}">
+                            ${method.enabled ? 'مفعل' : 'معطل'}
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editPaymentMethod('${method.id}')">
+                            <i class="bi bi-pencil me-1"></i>تعديل
+                        </button>
+                        ${method.id !== 'cash' && method.id !== 'card' ? 
+                            `<button class="btn btn-sm btn-outline-danger" onclick="deletePaymentMethod('${method.id}')">
+                                <i class="bi bi-trash me-1"></i>حذف
+                            </button>` : ''
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(methodCard);
+    });
+}
+
+function showAddForm() {
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('editForm').style.display = 'none';
+    document.getElementById('addPaymentMethodForm').reset();
+    document.getElementById('addPaymentMethodForm').classList.remove('was-validated');
+}
+
+function hideAddForm() {
+    document.getElementById('addForm').style.display = 'none';
+}
+
+function showEditForm() {
+    document.getElementById('editForm').style.display = 'block';
+    document.getElementById('addForm').style.display = 'none';
+}
+
+function hideEditForm() {
+    document.getElementById('editForm').style.display = 'none';
+}
+
+async function savePaymentMethod() {
+    const form = document.getElementById('addPaymentMethodForm');
+    
+    // التحقق من صحة النموذج
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    data.enabled = document.getElementById('method_enabled').checked;
+    
+    // التأكد من أن جميع الحقول موجودة
+    if (!data.name) {
+        showNotification('اسم الطريقة (عربي) مطلوب', 'danger');
+        return;
+    }
+    if (!data.name_en) {
+        showNotification('اسم الطريقة (إنجليزي) مطلوب', 'danger');
+        return;
+    }
+    if (!data.icon) data.icon = 'bi-cash';
+    if (!data.color) data.color = 'primary';
+    
+    try {
+        const response = await fetch('/settings/api/payment-methods', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم إضافة طريقة الدفع بنجاح!', 'success');
+            // إعادة تحميل البيانات
+            await loadPaymentMethods();
+            // إخفاء النموذج
+            hideAddForm();
+        } else {
+            showNotification('خطأ في إضافة طريقة الدفع: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error adding payment method:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+async function loadPaymentMethods() {
+    try {
+        const response = await fetch('/settings/api/payment-methods');
+        const result = await response.json();
+        
+        if (result.success) {
+            paymentMethods = result.payment_methods;
+            updatePaymentMethodsDisplay();
+        }
+    } catch (error) {
+        console.error('Error loading payment methods:', error);
+    }
+}
+
+function editPaymentMethod(methodId) {
+    const method = paymentMethods.find(m => m.id === methodId);
+    if (!method) {
+        showNotification('طريقة الدفع غير موجودة', 'danger');
+        return;
+    }
+    
+    // ملء النموذج
+    document.getElementById('edit_method_id').value = method.id;
+    document.getElementById('edit_method_name').value = method.name;
+    document.getElementById('edit_method_name_en').value = method.name_en;
+    document.getElementById('edit_method_icon').value = method.icon;
+    document.getElementById('edit_method_color').value = method.color;
+    document.getElementById('edit_method_enabled').checked = method.enabled;
+    
+    // إظهار نموذج التعديل
+    showEditForm();
+}
+
+async function updatePaymentMethod() {
+    const form = document.getElementById('editPaymentMethodForm');
+    
+    // التحقق من صحة النموذج
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    const methodId = data.id;
+    delete data.id;
+    data.enabled = document.getElementById('edit_method_enabled').checked;
+    
+    // التأكد من أن جميع الحقول موجودة
+    if (!data.name) {
+        showNotification('اسم الطريقة (عربي) مطلوب', 'danger');
+        return;
+    }
+    if (!data.name_en) {
+        showNotification('اسم الطريقة (إنجليزي) مطلوب', 'danger');
+        return;
+    }
+    if (!data.icon) data.icon = 'bi-cash';
+    if (!data.color) data.color = 'primary';
+    
+    try {
+        const response = await fetch(`/settings/api/payment-methods/${methodId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم تحديث طريقة الدفع بنجاح!', 'success');
+            // إعادة تحميل البيانات
+            await loadPaymentMethods();
+            // إخفاء النموذج
+            hideEditForm();
+        } else {
+            showNotification('خطأ في تحديث طريقة الدفع: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error updating payment method:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+async function deletePaymentMethod(methodId) {
+    if (!confirm('هل أنت متأكد من حذف طريقة الدفع؟')) return;
+    
+    try {
+        const response = await fetch(`/settings/api/payment-methods/${methodId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم حذف طريقة الدفع بنجاح!', 'success');
+            // إعادة تحميل البيانات
+            await loadPaymentMethods();
+        } else {
+            showNotification('خطأ في حذف طريقة الدفع: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error deleting payment method:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

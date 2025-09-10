@@ -22,9 +22,12 @@
               </div>
               <div class="mb-3">
                 <label class="form-label">طريقة الدفع</label>
-                <select name="payment_method" class="form-select">
-                  <option value="cash">نقدي</option>
-                  <option value="card">بطاقة</option>
+                <select name="payment_method" class="form-select" id="paymentMethodSelect">
+                  {% for method in payment_methods %}
+                  <option value="{{ method.id }}" {{ 'selected' if method.id == 'cash' else '' }}>
+                    {{ method.name }}
+                  </option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
@@ -84,17 +87,21 @@
           </div>
           
           <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
+              <label class="form-label">المجموع الفرعي</label>
+              <input type="text" id="subtotal" class="form-control" readonly value="0.00 {{ currency_config.symbol if currency_config else 'ر.س' }}">
+            </div>
+            <div class="col-md-3">
               <label class="form-label">الخصم</label>
-              <input name="discount_amount" type="number" class="form-control" step="0.01" min="0" value="0">
+              <input name="discount_amount" type="number" class="form-control" step="0.01" min="0" value="0" id="discountInput">
             </div>
-            <div class="col-md-4">
-              <label class="form-label">الضريبة</label>
-              <input name="tax_amount" type="number" class="form-control" step="0.01" min="0" value="0">
+            <div class="col-md-3">
+              <label class="form-label">الضريبة ({{ tax_config.tax_rate if tax_config else 0 }}%)</label>
+              <input name="tax_amount" type="number" class="form-control" step="0.01" min="0" value="0" id="taxInput" {{ 'readonly' if tax_config.tax_enabled else '' }}>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <label class="form-label">المجموع النهائي</label>
-              <input type="text" id="finalTotal" class="form-control" readonly value="0.00 ج.س">
+              <input type="text" id="finalTotal" class="form-control" readonly value="0.00 {{ currency_config.symbol if currency_config else 'ر.س' }}">
             </div>
           </div>
           
@@ -114,6 +121,25 @@
 
 <script>
 let selectedItems = [];
+let taxConfig = {{ tax_config | tojson }};
+let currencyConfig = {{ currency_config | tojson }};
+
+// Format currency
+function formatCurrency(amount) {
+    if (!currencyConfig) return amount.toFixed(2) + ' ر.س';
+    
+    const symbol = currencyConfig.symbol || 'ر.س';
+    const position = currencyConfig.symbol_position || 'after';
+    const decimalPlaces = currencyConfig.decimal_places || 2;
+    
+    const formattedAmount = amount.toFixed(decimalPlaces);
+    
+    if (position === 'before') {
+        return `${symbol}${formattedAmount}`;
+    } else {
+        return `${formattedAmount} ${symbol}`;
+    }
+}
 
 function addItem() {
   const itemSelect = document.getElementById('itemSelect');
@@ -172,8 +198,8 @@ function updateItemsDisplay() {
     <tr>
       <td>${item.name}</td>
       <td>${item.quantity}</td>
-      <td>${item.unit_price.toFixed(2)} ج.س</td>
-      <td>${item.total_price.toFixed(2)} ج.س</td>
+      <td>${formatCurrency(item.unit_price)}</td>
+      <td>${formatCurrency(item.total_price)}</td>
       <td>
         <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem('${item.item_id}')">
           <i class="bi bi-trash"></i>
@@ -185,11 +211,22 @@ function updateItemsDisplay() {
 
 function updateTotal() {
   const subtotal = selectedItems.reduce((sum, item) => sum + item.total_price, 0);
-  const discount = parseFloat(document.querySelector('input[name="discount_amount"]').value) || 0;
-  const tax = parseFloat(document.querySelector('input[name="tax_amount"]').value) || 0;
+  const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+  
+  // Calculate tax automatically if enabled
+  let tax = 0;
+  if (taxConfig && taxConfig.tax_enabled) {
+    tax = (subtotal - discount) * (taxConfig.tax_rate / 100);
+    document.getElementById('taxInput').value = tax.toFixed(2);
+  } else {
+    tax = parseFloat(document.getElementById('taxInput').value) || 0;
+  }
+  
   const final = subtotal - discount + tax;
   
-  document.getElementById('finalTotal').value = final.toFixed(2) + ' ج.س';
+  // Update display
+  document.getElementById('subtotal').value = formatCurrency(subtotal);
+  document.getElementById('finalTotal').value = formatCurrency(final);
   document.getElementById('submitBtn').disabled = selectedItems.length === 0;
 }
 
@@ -201,6 +238,14 @@ document.getElementById('itemSelect').addEventListener('change', function() {
     document.getElementById('itemPrice').value = price;
   }
 });
+
+// Recalculate totals when discount changes
+document.getElementById('discountInput').addEventListener('input', updateTotal);
+
+// Recalculate totals when tax changes (if not auto-calculated)
+if (!taxConfig || !taxConfig.tax_enabled) {
+  document.getElementById('taxInput').addEventListener('input', updateTotal);
+}
 
 // Add hidden inputs for form submission
 document.getElementById('invoiceForm').addEventListener('submit', function(e) {

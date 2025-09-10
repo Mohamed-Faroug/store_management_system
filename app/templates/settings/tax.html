@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-percent me-2"></i>إعدادات الضرائب</h2>
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-1"></i>العودة للرئيسية
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>إعدادات الضرائب</h5>
+                </div>
+                <div class="card-body">
+                    <form id="tax-settings-form">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="tax_enabled" name="tax_enabled" 
+                                           {{ 'checked' if tax_settings.tax_enabled else '' }}>
+                                    <label class="form-check-label" for="tax_enabled">
+                                        <strong>تفعيل الضرائب</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tax_rate" class="form-label">نسبة الضريبة (%)</label>
+                                <input type="number" class="form-control" id="tax_rate" name="tax_rate" 
+                                       value="{{ tax_settings.tax_rate }}" min="0" max="100" step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tax_number" class="form-label">الرقم الضريبي</label>
+                                <input type="text" class="form-control" id="tax_number" name="tax_number" 
+                                       value="{{ tax_settings.tax_number }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tax_name" class="form-label">اسم الضريبة (عربي)</label>
+                                <input type="text" class="form-control" id="tax_name" name="tax_name" 
+                                       value="{{ tax_settings.tax_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tax_short_name" class="form-label">اسم الضريبة (إنجليزي)</label>
+                                <input type="text" class="form-control" id="tax_short_name" name="tax_short_name" 
+                                       value="{{ tax_settings.tax_short_name }}">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>حفظ الإعدادات
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetTaxSettings()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>إعادة تعيين
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-eye me-2"></i>معاينة الضريبة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="tax-preview">
+                        <div class="text-center mb-3">
+                            <h6>مثال على حساب الضريبة</h6>
+                        </div>
+                        <div class="border rounded p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>المبلغ الأساسي:</span>
+                                <span id="preview_base_amount">100.00 ر.س</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span id="preview_tax_label">الضريبة (15%):</span>
+                                <span id="preview_tax_amount">15.00 ر.س</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>المجموع النهائي:</span>
+                                <span id="preview_total_amount">115.00 ر.س</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>معلومات الضريبة</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <strong>الحالة:</strong><br>
+                            <span id="preview_tax_status" class="badge bg-success">مفعلة</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>النسبة:</strong><br>
+                            <span id="preview_tax_rate">{{ tax_settings.tax_rate }}%</span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>الرقم الضريبي:</strong><br>
+                            <span id="preview_tax_number">{{ tax_settings.tax_number }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث المعاينة عند تغيير الحقول
+    const formFields = document.querySelectorAll('#tax-settings-form input, #tax-settings-form select');
+    formFields.forEach(field => {
+        field.addEventListener('input', updateTaxPreview);
+        field.addEventListener('change', updateTaxPreview);
+    });
+    
+    // معالجة إرسال النموذج
+    document.getElementById('tax-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveTaxSettings();
+    });
+    
+    // تحديث المعاينة الأولية
+    updateTaxPreview();
+});
+
+function updateTaxPreview() {
+    const taxEnabled = document.getElementById('tax_enabled').checked;
+    const taxRate = parseFloat(document.getElementById('tax_rate').value) || 0;
+    const taxName = document.getElementById('tax_name').value || 'الضريبة';
+    const taxNumber = document.getElementById('tax_number').value || '';
+    
+    const baseAmount = 100.00;
+    const taxAmount = taxEnabled ? (baseAmount * taxRate) / 100 : 0;
+    const totalAmount = baseAmount + taxAmount;
+    
+    // تحديث المعاينة
+    document.getElementById('preview_tax_status').textContent = taxEnabled ? 'مفعلة' : 'معطلة';
+    document.getElementById('preview_tax_status').className = `badge ${taxEnabled ? 'bg-success' : 'bg-danger'}`;
+    document.getElementById('preview_tax_rate').textContent = `${taxRate}%`;
+    document.getElementById('preview_tax_number').textContent = taxNumber;
+    document.getElementById('preview_tax_label').textContent = `${taxName} (${taxRate}%):`;
+    
+    document.getElementById('preview_base_amount').textContent = `${baseAmount.toFixed(2)} ر.س`;
+    document.getElementById('preview_tax_amount').textContent = `${taxAmount.toFixed(2)} ر.س`;
+    document.getElementById('preview_total_amount').textContent = `${totalAmount.toFixed(2)} ر.س`;
+}
+
+async function saveTaxSettings() {
+    const formData = new FormData(document.getElementById('tax-settings-form'));
+    const data = Object.fromEntries(formData);
+    
+    // تحويل القيم المناسبة
+    data.tax_enabled = document.getElementById('tax_enabled').checked;
+    data.tax_rate = parseFloat(data.tax_rate) || 0;
+    
+    // التأكد من أن جميع الحقول موجودة
+    if (!data.tax_name) data.tax_name = 'الضريبة';
+    if (!data.tax_short_name) data.tax_short_name = 'Tax';
+    if (!data.tax_number) data.tax_number = '';
+    
+    try {
+        const response = await fetch('/settings/api/tax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('تم حفظ إعدادات الضرائب بنجاح!', 'success');
+        } else {
+            showNotification('خطأ في حفظ الإعدادات: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error saving tax settings:', error);
+        showNotification('خطأ في الاتصال بالخادم', 'danger');
+    }
+}
+
+async function resetTaxSettings() {
+    if (confirm('هل أنت متأكد من إعادة تعيين إعدادات الضرائب إلى القيم الافتراضية؟')) {
+        try {
+            const response = await fetch('/settings/api/tax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tax_enabled: true,
+                    tax_rate: 15.0,
+                    tax_name: 'ضريبة القيمة المضافة',
+                    tax_short_name: 'VAT',
+                    tax_number: '123456789012345'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('تم إعادة تعيين إعدادات الضرائب بنجاح!', 'success');
+                location.reload();
+            } else {
+                showNotification('خطأ في إعادة تعيين الإعدادات: ' + result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error resetting tax settings:', error);
+            showNotification('خطأ في الاتصال بالخادم', 'danger');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

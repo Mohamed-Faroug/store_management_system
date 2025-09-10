@@ -177,15 +177,15 @@
         
         <!-- Company Info -->
         <div class="company-info">
-            <h3>مخزن الزينة</h3>
-            <p>الرياض - المملكة العربية السعودية</p>
-            <p>هاتف: +966 50 123 4567</p>
+            <h3>{{ store_settings.store_name or 'مخزن الزينة' }}</h3>
+            <p>{{ store_settings.store_address or 'الرياض - المملكة العربية السعودية' }}</p>
+            <p>هاتف: {{ store_settings.store_phone or '+966 50 123 4567' }}</p>
         </div>
         
         <!-- Invoice Info -->
         <div class="invoice-info">
             <p><strong>العميل:</strong> {{ invoice['customer_name'] or 'نقدي' }}</p>
-            <p><strong>الدفع:</strong> {{ 'نقدي' if invoice['payment_method'] == 'cash' else 'بطاقة' }}</p>
+            <p><strong>الدفع:</strong> {{ payment_method_name }}</p>
         </div>
         
         <!-- Items Table -->
