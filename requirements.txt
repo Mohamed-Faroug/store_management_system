@@ -46,7 +46,7 @@ Flask-RESTful==0.3.10
 Flask-Migrate==4.0.5
 
 # Utilities
-click==8.1.7
+click==8.1.8
 itsdangerous==2.1.2
 blinker==1.6.2
 
