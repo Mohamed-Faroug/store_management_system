@@ -206,6 +206,62 @@ def init_db():
                           ('الموظف', 'المبيعات والمخزون', 'مرئي', user['id']))
         db.commit()
     
+    # Remove old CHECK constraint and add new one
+    try:
+        # Check if we need to recreate the table to remove the old constraint
+        db.execute('SELECT role FROM users WHERE role = "المطور" LIMIT 1')
+        print("New structure already in place")
+    except sqlite3.OperationalError:
+        # Need to recreate table to remove old constraint
+        print("Recreating users table with new structure...")
+        
+        # Create new table with correct structure
+        db.execute('''
+            CREATE TABLE users_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                permissions TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'مرئي',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Copy data from old table
+        old_users = db.execute('SELECT * FROM users').fetchall()
+        for user in old_users:
+            # Map old roles to new roles
+            if user['role'] in ['manager', 'dev', 'owner', 'clerk']:
+                if user['username'] == 'dev':
+                    new_role = 'المطور'
+                    permissions = 'جميع الصلاحيات'
+                    status = 'مخفي'
+                elif user['username'] == 'owner':
+                    new_role = 'المالك'
+                    permissions = 'جميع الصلاحيات'
+                    status = 'مخفي'
+                elif user['username'] == 'admin' or user['role'] == 'manager':
+                    new_role = 'المدير'
+                    permissions = 'إدارة المستخدمين والمخزون والمبيعات'
+                    status = 'مرئي'
+                else:
+                    new_role = 'الموظف'
+                    permissions = 'المبيعات والمخزون'
+                    status = 'مرئي'
+                
+                db.execute('''
+                    INSERT INTO users_new (id, role, username, password_hash, permissions, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (user['id'], new_role, user['username'], user['password_hash'], 
+                      permissions, status, user.get('created_at', 'CURRENT_TIMESTAMP')))
+        
+        # Drop old table and rename new one
+        db.execute('DROP TABLE users')
+        db.execute('ALTER TABLE users_new RENAME TO users')
+        db.commit()
+        print("Users table recreated successfully!")
+    
     # مستخدمين افتراضيين إذا لا يوجدون
     cur = db.execute('SELECT COUNT(*) as c FROM users')
     if cur.fetchone()['c'] == 0:
