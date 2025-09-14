@@ -32,12 +32,21 @@ def close_db(exception=None):
 def init_db():
     """تهيئة قاعدة البيانات"""
     from flask import current_app
+    db = None
     try:
         db = get_db()
         db.executescript(SCHEMA_SQL)
     except Exception as e:
         print(f"Database schema creation warning: {e}")
         # Continue with other initialization
+    
+    # Ensure we have a database connection
+    if db is None:
+        try:
+            db = get_db()
+        except Exception as e:
+            print(f"Failed to get database connection: {e}")
+            return
     
     # Database migration - add new columns if they don't exist
     try:
