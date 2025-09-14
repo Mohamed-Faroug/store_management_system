@@ -5,6 +5,18 @@
 
 from functools import wraps
 from flask import request, redirect, url_for, flash, session
+from ..models.database import get_db
+
+def check_user_permissions(username, required_role):
+    """التحقق من صلاحيات المستخدم من قاعدة البيانات"""
+    try:
+        db = get_db()
+        user = db.execute('SELECT role FROM users WHERE username = ?', (username,)).fetchone()
+        if user:
+            return user['role'] == required_role
+        return False
+    except:
+        return False
 
 def login_required(role=None):
     """مطلوب تسجيل الدخول مع اختياري للدور"""
@@ -47,10 +59,12 @@ def dev_user_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        if username != 'dev' and role != 'dev':
+        # التحقق من أن المستخدم هو dev أو له دور dev
+        if username == 'dev' or role == 'dev' or check_user_permissions(username, 'dev'):
+            return f(*args, **kwargs)
+        else:
             flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدم dev فقط.', 'danger')
             return redirect(url_for('main.index'))
-        return f(*args, **kwargs)
     return wrapper
 
 def owner_user_required(f):
@@ -65,10 +79,12 @@ def owner_user_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        if username != 'owner' and role != 'owner':
+        # التحقق من أن المستخدم هو owner أو له دور owner
+        if username == 'owner' or role == 'owner' or check_user_permissions(username, 'owner'):
+            return f(*args, **kwargs)
+        else:
             flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدم owner فقط.', 'danger')
             return redirect(url_for('main.index'))
-        return f(*args, **kwargs)
     return wrapper
 
 def dev_or_owner_required(f):
@@ -83,8 +99,11 @@ def dev_or_owner_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        if username not in ['dev', 'owner'] and role not in ['dev', 'owner']:
+        # التحقق من أن المستخدم هو dev أو owner أو له دور dev أو owner
+        if (username in ['dev', 'owner'] or role in ['dev', 'owner'] or 
+            check_user_permissions(username, 'dev') or check_user_permissions(username, 'owner')):
+            return f(*args, **kwargs)
+        else:
             flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدمي dev و owner فقط.', 'danger')
             return redirect(url_for('main.index'))
-        return f(*args, **kwargs)
     return wrapper
