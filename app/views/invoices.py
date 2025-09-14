@@ -25,7 +25,7 @@ def list():
     
     # Build query
     query = '''
-        SELECT i.*, u.username as created_by_name
+        SELECT i.*, COALESCE(i.created_by_name, u.username, 'مستخدم محذوف') as created_by_name
         FROM invoices i
         LEFT JOIN users u ON u.id = i.created_by
         WHERE 1=1
@@ -104,9 +104,9 @@ def new():
             
             # Create invoice record
             invoice_id = db.execute('''
-                INSERT INTO invoices (invoice_number, customer_name, customer_phone, total_amount, discount_amount, tax_amount, final_amount, payment_method, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (invoice_number, customer_name, customer_phone, total_amount, discount_amount, tax_amount, final_amount, payment_method, session['user_id'])).lastrowid
+                INSERT INTO invoices (invoice_number, customer_name, customer_phone, total_amount, discount_amount, tax_amount, final_amount, payment_method, created_by, created_by_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (invoice_number, customer_name, customer_phone, total_amount, discount_amount, tax_amount, final_amount, payment_method, session['user_id'], session['username'])).lastrowid
             
             # Add invoice items and update inventory
             for item in items:

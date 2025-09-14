@@ -162,6 +162,21 @@ def init_db():
             db.execute('UPDATE sales SET final_price = ? WHERE id = ?', (sale['total_price'], sale['id']))
         db.commit()
     
+    # Add created_by_name column to invoices table if it doesn't exist
+    try:
+        db.execute('SELECT created_by_name FROM invoices LIMIT 1')
+    except sqlite3.OperationalError:
+        db.execute('ALTER TABLE invoices ADD COLUMN created_by_name TEXT')
+        
+        # Update existing invoices with usernames
+        invoices = db.execute('SELECT id, created_by FROM invoices WHERE created_by IS NOT NULL').fetchall()
+        for invoice in invoices:
+            user = db.execute('SELECT username FROM users WHERE id = ?', (invoice['created_by'],)).fetchone()
+            if user:
+                db.execute('UPDATE invoices SET created_by_name = ? WHERE id = ?', 
+                          (user['username'], invoice['id']))
+        db.commit()
+    
     # مستخدمين افتراضيين إذا لا يوجدون
     cur = db.execute('SELECT COUNT(*) as c FROM users')
     if cur.fetchone()['c'] == 0:
@@ -266,6 +281,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     status TEXT DEFAULT 'completed',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     created_by INTEGER,
+    created_by_name TEXT,
     FOREIGN KEY(created_by) REFERENCES users(id)
 );
 
