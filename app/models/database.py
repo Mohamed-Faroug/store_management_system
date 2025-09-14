@@ -162,6 +162,8 @@ def init_db():
                    ('clerk', generate_password_hash('clerk123'), 'clerk'))
         db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
                    ('dev', generate_password_hash('dev'), 'dev'))
+        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
+                   ('owner', generate_password_hash('owner'), 'owner'))
         db.commit()
     
     # التأكد من وجود مستخدم dev
@@ -173,6 +175,17 @@ def init_db():
     else:
         # تحديث دور المستخدم dev إذا كان موجود
         db.execute('UPDATE users SET role = ? WHERE username = ?', ('dev', 'dev'))
+        db.commit()
+    
+    # التأكد من وجود مستخدم owner
+    owner_user = db.execute('SELECT * FROM users WHERE username = ?', ('owner',)).fetchone()
+    if not owner_user:
+        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
+                   ('owner', generate_password_hash('owner'), 'owner'))
+        db.commit()
+    else:
+        # تحديث دور المستخدم owner إذا كان موجود
+        db.execute('UPDATE users SET role = ? WHERE username = ?', ('owner', 'owner'))
         db.commit()
     
     # فئات افتراضية إذا لا توجد
@@ -205,7 +218,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT CHECK(role IN ('manager','clerk','dev')) NOT NULL DEFAULT 'clerk',
+    role TEXT CHECK(role IN ('manager','clerk','dev','owner')) NOT NULL DEFAULT 'clerk',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -6,7 +6,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from werkzeug.security import generate_password_hash
 from ..models.database import get_db
-from ..utils.auth import login_required
+from ..utils.auth import login_required, dev_or_owner_required
 
 bp = Blueprint('users', __name__)
 
@@ -15,7 +15,7 @@ bp = Blueprint('users', __name__)
 def list():
     """قائمة المستخدمين"""
     db = get_db()
-    users = db.execute('SELECT * FROM users WHERE username != ? ORDER BY created_at DESC', ('dev',)).fetchall()
+    users = db.execute('SELECT * FROM users WHERE username NOT IN (?, ?) ORDER BY created_at DESC', ('dev', 'owner')).fetchall()
     return render_template('users/list.html', users=users)
 
 @bp.route('/users/new', methods=['GET', 'POST'])
@@ -60,8 +60,8 @@ def edit(user_id):
         flash('المستخدم غير موجود', 'danger')
         return redirect(url_for('users.list'))
     
-    if user['username'] == 'dev':
-        flash('لا يمكن تعديل مستخدم dev', 'danger')
+    if user['username'] in ['dev', 'owner']:
+        flash('لا يمكن تعديل مستخدمي dev و owner', 'danger')
         return redirect(url_for('users.list'))
     
     if request.method == 'POST':
@@ -113,8 +113,8 @@ def delete(user_id):
         flash('لا يمكن حذف المستخدم الرئيسي', 'danger')
         return redirect(url_for('users.list'))
     
-    if user['username'] == 'dev':
-        flash('لا يمكن حذف مستخدم dev', 'danger')
+    if user['username'] in ['dev', 'owner']:
+        flash('لا يمكن حذف مستخدمي dev و owner', 'danger')
         return redirect(url_for('users.list'))
     
     try:

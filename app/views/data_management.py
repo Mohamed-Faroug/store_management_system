@@ -17,7 +17,7 @@ except ImportError:
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from werkzeug.utils import secure_filename
 from ..models.database import get_db
-from ..utils.auth import dev_user_required
+from ..utils.auth import dev_or_owner_required
 
 data_management_bp = Blueprint('data_management', __name__)
 
@@ -34,13 +34,13 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @data_management_bp.route('/data-management')
-@dev_user_required
+@dev_or_owner_required
 def index():
     """الصفحة الرئيسية لإدارة البيانات"""
     return render_template('data_management/index.html')
 
 @data_management_bp.route('/data-management/export')
-@dev_user_required
+@dev_or_owner_required
 def export_data():
     """تصدير البيانات"""
     export_type = request.args.get('type', 'items')
@@ -219,7 +219,7 @@ def export_sales():
         return redirect(url_for('data_management.index'))
 
 @data_management_bp.route('/data-management/import', methods=['GET', 'POST'])
-@dev_user_required
+@dev_or_owner_required
 def import_data():
     """استيراد البيانات"""
     if request.method == 'POST':
@@ -404,7 +404,7 @@ def import_categories(filepath):
         }
 
 @data_management_bp.route('/data-management/template/<template_type>')
-@dev_user_required
+@dev_or_owner_required
 def download_template(template_type):
     """تحميل قالب للبيانات"""
     try:

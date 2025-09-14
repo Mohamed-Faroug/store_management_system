@@ -26,6 +26,7 @@
             <select name="role" class="form-select" required>
               <option value="manager" {% if user['role'] == 'manager' %}selected{% endif %}>مدير</option>
               <option value="clerk" {% if user['role'] == 'clerk' %}selected{% endif %}>كاشير</option>
+              <option value="owner" {% if user['role'] == 'owner' %}selected{% endif %}>مالك</option>
             </select>
             <div class="invalid-feedback">يرجى اختيار الدور</div>
           </div>

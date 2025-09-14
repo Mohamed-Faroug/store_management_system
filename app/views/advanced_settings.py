@@ -5,21 +5,21 @@
 
 from flask import Blueprint, render_template, request, jsonify, session
 from app.models.settings_models import tax_settings, payment_method_settings, currency_settings, pos_settings
-from app.utils.auth import dev_user_required, login_required
+from app.utils.auth import dev_or_owner_required, login_required
 
 advanced_settings_bp = Blueprint('advanced_settings', __name__, url_prefix='/settings')
 
 # ==================== إعدادات الضرائب ====================
 
 @advanced_settings_bp.route('/tax')
-@dev_user_required
+@dev_or_owner_required
 def tax_page():
     """صفحة إعدادات الضرائب"""
     settings = tax_settings.get_all_settings()
     return render_template('settings/tax.html', tax_settings=settings)
 
 @advanced_settings_bp.route('/api/tax', methods=['POST'])
-@dev_user_required
+@dev_or_owner_required
 def update_tax_settings():
     """تحديث إعدادات الضرائب"""
     try:
@@ -55,7 +55,7 @@ def update_tax_settings():
         }), 500
 
 @advanced_settings_bp.route('/api/tax', methods=['GET'])
-@dev_user_required
+@dev_or_owner_required
 def get_tax_settings():
     """الحصول على إعدادات الضرائب"""
     try:
@@ -73,14 +73,14 @@ def get_tax_settings():
 # ==================== إعدادات طرق الدفع ====================
 
 @advanced_settings_bp.route('/payment-methods')
-@dev_user_required
+@dev_or_owner_required
 def payment_methods_page():
     """صفحة إدارة طرق الدفع"""
     methods = payment_method_settings.get_all_methods()
     return render_template('settings/payment_methods.html', payment_methods=methods)
 
 @advanced_settings_bp.route('/api/payment-methods', methods=['GET'])
-@dev_user_required
+@dev_or_owner_required
 def get_payment_methods():
     """الحصول على طرق الدفع"""
     try:
@@ -96,7 +96,7 @@ def get_payment_methods():
         }), 500
 
 @advanced_settings_bp.route('/api/payment-methods', methods=['POST'])
-@dev_user_required
+@dev_or_owner_required
 def add_payment_method():
     """إضافة طريقة دفع جديدة"""
     try:
@@ -132,7 +132,7 @@ def add_payment_method():
         }), 500
 
 @advanced_settings_bp.route('/api/payment-methods/<method_id>', methods=['PUT'])
-@dev_user_required
+@dev_or_owner_required
 def update_payment_method(method_id):
     """تحديث طريقة دفع"""
     try:
@@ -159,7 +159,7 @@ def update_payment_method(method_id):
         }), 500
 
 @advanced_settings_bp.route('/api/payment-methods/<method_id>', methods=['DELETE'])
-@dev_user_required
+@dev_or_owner_required
 def delete_payment_method(method_id):
     """حذف طريقة دفع"""
     try:
@@ -191,7 +191,7 @@ def delete_payment_method(method_id):
         }), 500
 
 @advanced_settings_bp.route('/payment-methods/<method_id>/edit')
-@dev_user_required
+@dev_or_owner_required
 def edit_payment_method(method_id):
     """صفحة تعديل طريقة دفع"""
     methods = payment_method_settings.get_all_methods()
@@ -209,14 +209,14 @@ def edit_payment_method(method_id):
 # ==================== إعدادات العملات ====================
 
 @advanced_settings_bp.route('/currency')
-@dev_user_required
+@dev_or_owner_required
 def currency_page():
     """صفحة إعدادات العملات"""
     settings = currency_settings.get_all_settings()
     return render_template('settings/currency.html', currency_settings=settings)
 
 @advanced_settings_bp.route('/api/currency', methods=['POST'])
-@dev_user_required
+@dev_or_owner_required
 def update_currency_settings():
     """تحديث إعدادات العملات"""
     try:
@@ -243,7 +243,7 @@ def update_currency_settings():
         }), 500
 
 @advanced_settings_bp.route('/api/currency', methods=['GET'])
-@dev_user_required
+@dev_or_owner_required
 def get_currency_settings():
     """الحصول على إعدادات العملات"""
     try:
@@ -261,14 +261,14 @@ def get_currency_settings():
 # ==================== إعدادات نقطة البيع ====================
 
 @advanced_settings_bp.route('/pos')
-@dev_user_required
+@dev_or_owner_required
 def pos_page():
     """صفحة إعدادات نقطة البيع"""
     settings = pos_settings.get_all_settings()
     return render_template('settings/pos.html', pos_settings=settings)
 
 @advanced_settings_bp.route('/api/pos', methods=['POST'])
-@dev_user_required
+@dev_or_owner_required
 def update_pos_settings():
     """تحديث إعدادات نقطة البيع"""
     try:
@@ -306,7 +306,7 @@ def update_pos_settings():
         }), 500
 
 @advanced_settings_bp.route('/api/pos', methods=['GET'])
-@dev_user_required
+@dev_or_owner_required
 def get_pos_settings():
     """الحصول على إعدادات نقطة البيع"""
     try:

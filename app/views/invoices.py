@@ -6,7 +6,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from ..models.database import get_db, now_str
 from ..models.settings_models import tax_settings, payment_method_settings, currency_settings
-from ..utils.auth import login_required, dev_user_required
+from ..utils.auth import login_required, dev_or_owner_required
 from ..utils.payment_utils import get_payment_method_display_name
 
 bp = Blueprint('invoices', __name__)
@@ -240,7 +240,7 @@ def print_invoice_58mm(invoice_id):
                          payment_method_name=payment_method_name)
 
 @bp.route('/api/invoices/<int:invoice_id>/data')
-@dev_user_required
+@dev_or_owner_required
 def get_invoice_data(invoice_id):
     """جلب بيانات الفاتورة كـ JSON - لمستخدم dev فقط"""
     from flask import jsonify
@@ -284,7 +284,7 @@ def get_invoice_data(invoice_id):
         return jsonify({'error': f'خطأ في جلب البيانات: {str(e)}'}), 500
 
 @bp.route('/api/invoices/export')
-@dev_user_required
+@dev_or_owner_required
 def export_invoices():
     """تصدير جميع الفواتير كـ JSON - لمستخدم dev فقط"""
     from flask import jsonify
@@ -346,20 +346,20 @@ def export_invoices():
         return jsonify({'error': f'خطأ في تصدير البيانات: {str(e)}'}), 500
 
 @bp.route('/invoices/export-page')
-@dev_user_required
+@dev_or_owner_required
 def export_page():
     """صفحة تصدير البيانات - لمستخدم dev فقط"""
     return render_template('invoices/export.html')
 
 @bp.route('/api/test')
-@dev_user_required
+@dev_or_owner_required
 def test_api():
     """اختبار API - لمستخدم dev فقط"""
     from flask import jsonify
     return jsonify({'status': 'success', 'message': 'API يعمل بشكل صحيح'})
 
 @bp.route('/api/status')
-@dev_user_required
+@dev_or_owner_required
 def api_status():
     """حالة API - لمستخدم dev فقط"""
     from flask import jsonify

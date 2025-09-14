@@ -5,12 +5,12 @@ API endpoints للتطبيق
 
 from flask import Blueprint, jsonify
 from ..models.database import get_db
-from ..utils.auth import dev_user_required
+from ..utils.auth import dev_or_owner_required
 
 api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/api/statistics/items')
-@dev_user_required
+@dev_or_owner_required
 def get_items_statistics():
     """إحصائيات الأصناف"""
     try:
@@ -21,7 +21,7 @@ def get_items_statistics():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/api/statistics/categories')
-@dev_user_required
+@dev_or_owner_required
 def get_categories_statistics():
     """إحصائيات الفئات"""
     try:
@@ -32,7 +32,7 @@ def get_categories_statistics():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/api/statistics/invoices')
-@dev_user_required
+@dev_or_owner_required
 def get_invoices_statistics():
     """إحصائيات الفواتير"""
     try:
@@ -43,7 +43,7 @@ def get_invoices_statistics():
         return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/api/statistics/sales')
-@dev_user_required
+@dev_or_owner_required
 def get_sales_statistics():
     """إحصائيات المبيعات"""
     try:

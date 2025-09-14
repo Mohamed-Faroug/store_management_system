@@ -52,3 +52,39 @@ def dev_user_required(f):
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)
     return wrapper
+
+def owner_user_required(f):
+    """مطلوب دور owner للوصول"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('الرجاء تسجيل الدخول', 'warning')
+            return redirect(url_for('auth.login', next=request.path))
+        
+        # التحقق من اسم المستخدم أو الدور
+        username = session.get('username')
+        role = session.get('role')
+        
+        if username != 'owner' and role != 'owner':
+            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدم owner فقط.', 'danger')
+            return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return wrapper
+
+def dev_or_owner_required(f):
+    """مطلوب دور dev أو owner للوصول"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('الرجاء تسجيل الدخول', 'warning')
+            return redirect(url_for('auth.login', next=request.path))
+        
+        # التحقق من اسم المستخدم أو الدور
+        username = session.get('username')
+        role = session.get('role')
+        
+        if username not in ['dev', 'owner'] and role not in ['dev', 'owner']:
+            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدمي dev و owner فقط.', 'danger')
+            return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return wrapper
