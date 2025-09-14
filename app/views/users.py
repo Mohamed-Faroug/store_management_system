@@ -15,7 +15,7 @@ bp = Blueprint('users', __name__)
 def list():
     """قائمة المستخدمين"""
     db = get_db()
-    users = db.execute('SELECT * FROM users WHERE status = ? ORDER BY created_at DESC', ('مرئي',)).fetchall()
+    users = db.execute('SELECT * FROM users WHERE status = ? ORDER BY created_at DESC', ('visible',)).fetchall()
     return render_template('users/list.html', users=users)
 
 @bp.route('/users/new', methods=['GET', 'POST'])
@@ -25,7 +25,7 @@ def new():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'الموظف')
+        role = request.form.get('role', 'clerk')
         permissions = request.form.get('permissions', '').strip()
         
         if not username or not password or not permissions:
@@ -41,7 +41,7 @@ def new():
             db.execute('''
                 INSERT INTO users (role, username, password_hash, permissions, status)
                 VALUES (?, ?, ?, ?, ?)
-            ''', (role, username, generate_password_hash(password), permissions, 'مرئي'))
+            ''', (role, username, generate_password_hash(password), permissions, 'visible'))
             db.commit()
             flash('تم إضافة المستخدم بنجاح', 'success')
             return redirect(url_for('users.list'))
@@ -68,7 +68,7 @@ def edit(user_id):
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'الموظف')
+        role = request.form.get('role', 'clerk')
         permissions = request.form.get('permissions', '').strip()
         
         if not username or not permissions:

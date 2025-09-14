@@ -30,294 +30,45 @@ def close_db(exception=None):
         db.close()
 
 def init_db():
-    """تهيئة قاعدة البيانات"""
-    from flask import current_app
-    db = None
-    try:
-        db = get_db()
-        db.executescript(SCHEMA_SQL)
-    except Exception as e:
-        print(f"Database schema creation warning: {e}")
-        # Continue with other initialization
-    
-    # Ensure we have a database connection
-    if db is None:
-        try:
-            db = get_db()
-        except Exception as e:
-            print(f"Failed to get database connection: {e}")
-            return
-    
-    # Database migration - add new columns if they don't exist
-    try:
-        # Check if total_price column exists in sales table
-        db.execute('SELECT total_price FROM sales LIMIT 1')
-    except sqlite3.OperationalError:
-        # Add missing columns to existing tables
-        db.execute('ALTER TABLE sales ADD COLUMN total_price REAL NOT NULL DEFAULT 0')
-        db.execute('ALTER TABLE sales ADD COLUMN invoice_id INTEGER')
-        db.execute('ALTER TABLE items ADD COLUMN category_id INTEGER')
-        db.execute('ALTER TABLE items ADD COLUMN description TEXT')
-        db.execute('ALTER TABLE items ADD COLUMN cost_price REAL DEFAULT 0')
-        db.execute('ALTER TABLE items ADD COLUMN selling_price REAL DEFAULT 0')
-        db.execute('ALTER TABLE items ADD COLUMN image_url TEXT')
-        db.commit()
-    
-    # Create categories table if it doesn't exist
-    try:
-        db.execute('SELECT * FROM categories LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('''
-            CREATE TABLE categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
-                description TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        db.commit()
-    
-    # Create invoices table if it doesn't exist
-    try:
-        db.execute('SELECT * FROM invoices LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('''
-            CREATE TABLE invoices (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                invoice_number TEXT UNIQUE NOT NULL,
-                customer_name TEXT,
-                customer_phone TEXT,
-                total_amount REAL NOT NULL DEFAULT 0,
-                discount_amount REAL DEFAULT 0,
-                tax_amount REAL DEFAULT 0,
-                final_amount REAL NOT NULL DEFAULT 0,
-                payment_method TEXT DEFAULT 'cash',
-                status TEXT DEFAULT 'completed',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                created_by INTEGER,
-                FOREIGN KEY(created_by) REFERENCES users(id)
-            )
-        ''')
-        db.commit()
-    
-    # Create purchases table if it doesn't exist
-    try:
-        db.execute('SELECT * FROM purchases LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('''
-            CREATE TABLE purchases (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                supplier_name TEXT,
-                supplier_phone TEXT,
-                total_amount REAL NOT NULL DEFAULT 0,
-                discount_amount REAL DEFAULT 0,
-                tax_amount REAL DEFAULT 0,
-                final_amount REAL NOT NULL DEFAULT 0,
-                payment_method TEXT DEFAULT 'cash',
-                status TEXT DEFAULT 'completed',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                created_by INTEGER,
-                FOREIGN KEY(created_by) REFERENCES users(id)
-            )
-        ''')
-        db.commit()
-    
-    # Create purchase_items table if it doesn't exist
-    try:
-        db.execute('SELECT * FROM purchase_items LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('''
-            CREATE TABLE purchase_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                purchase_id INTEGER,
-                item_id INTEGER NOT NULL,
-                quantity INTEGER NOT NULL CHECK(quantity > 0),
-                unit_cost REAL NOT NULL DEFAULT 0,
-                total_cost REAL NOT NULL DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(purchase_id) REFERENCES purchases(id) ON DELETE CASCADE,
-                FOREIGN KEY(item_id) REFERENCES items(id) ON DELETE CASCADE
-            )
-        ''')
-        db.commit()
-        
-        # Update existing sales records to have total_price
-        existing_sales = db.execute('SELECT id, quantity, unit_price FROM sales WHERE total_price = 0').fetchall()
-        for sale in existing_sales:
-            total_price = sale['quantity'] * sale['unit_price']
-            db.execute('UPDATE sales SET total_price = ? WHERE id = ?', (total_price, sale['id']))
-        db.commit()
-    
-    # Add new columns to sales table if they don't exist
-    try:
-        db.execute('SELECT discount_amount FROM sales LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('ALTER TABLE sales ADD COLUMN discount_amount REAL DEFAULT 0')
-        db.execute('ALTER TABLE sales ADD COLUMN tax_amount REAL DEFAULT 0')
-        db.execute('ALTER TABLE sales ADD COLUMN final_price REAL NOT NULL DEFAULT 0')
-        
-        # Update existing sales records
-        existing_sales = db.execute('SELECT id, total_price FROM sales').fetchall()
-        for sale in existing_sales:
-            db.execute('UPDATE sales SET final_price = ? WHERE id = ?', (sale['total_price'], sale['id']))
-        db.commit()
-    
-    # Add created_by_name column to invoices table if it doesn't exist
-    try:
-        db.execute('SELECT created_by_name FROM invoices LIMIT 1')
-    except sqlite3.OperationalError:
-        db.execute('ALTER TABLE invoices ADD COLUMN created_by_name TEXT')
-        
-        # Update existing invoices with usernames
-        invoices = db.execute('SELECT id, created_by FROM invoices WHERE created_by IS NOT NULL').fetchall()
-        for invoice in invoices:
-            user = db.execute('SELECT username FROM users WHERE id = ?', (invoice['created_by'],)).fetchone()
-            if user:
-                db.execute('UPDATE invoices SET created_by_name = ? WHERE id = ?', 
-                          (user['username'], invoice['id']))
-        db.commit()
-    
-    # Add new columns to users table if they don't exist
-    try:
-        db.execute('SELECT permissions FROM users LIMIT 1')
-    except sqlite3.OperationalError:
-        # Add new columns to users table
-        db.execute('ALTER TABLE users ADD COLUMN permissions TEXT')
-        db.execute('ALTER TABLE users ADD COLUMN status TEXT DEFAULT "مرئي"')
-        
-        # Update existing users with new structure
-        users = db.execute('SELECT id, username, role FROM users').fetchall()
-        for user in users:
-            if user['username'] == 'dev':
-                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
-                          ('المطور', 'جميع الصلاحيات', 'مخفي', user['id']))
-            elif user['username'] == 'owner':
-                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
-                          ('المالك', 'جميع الصلاحيات', 'مخفي', user['id']))
-            elif user['username'] == 'admin':
-                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
-                          ('المدير', 'إدارة المستخدمين والمخزون والمبيعات', 'مرئي', user['id']))
-            elif user['username'] == 'clerk':
-                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
-                          ('الموظف', 'المبيعات والمخزون', 'مرئي', user['id']))
-            else:
-                # For other users, set default values
-                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
-                          ('الموظف', 'المبيعات والمخزون', 'مرئي', user['id']))
-        db.commit()
-    
-    # Remove old CHECK constraint and add new one
-    try:
-        # Check if we need to recreate the table to remove the old constraint
-        db.execute('SELECT role FROM users WHERE role = "المطور" LIMIT 1')
-        print("New structure already in place")
-    except sqlite3.OperationalError:
-        # Need to recreate table to remove old constraint
-        print("Recreating users table with new structure...")
-        
-        # Create new table with correct structure
-        db.execute('''
-            CREATE TABLE users_new (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                role TEXT NOT NULL,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                permissions TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'مرئي',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Copy data from old table
-        old_users = db.execute('SELECT * FROM users').fetchall()
-        for user in old_users:
-            # Map old roles to new roles
-            if user['role'] in ['manager', 'dev', 'owner', 'clerk']:
-                if user['username'] == 'dev':
-                    new_role = 'المطور'
-                    permissions = 'جميع الصلاحيات'
-                    status = 'مخفي'
-                elif user['username'] == 'owner':
-                    new_role = 'المالك'
-                    permissions = 'جميع الصلاحيات'
-                    status = 'مخفي'
-                elif user['username'] == 'admin' or user['role'] == 'manager':
-                    new_role = 'المدير'
-                    permissions = 'إدارة المستخدمين والمخزون والمبيعات'
-                    status = 'مرئي'
-                else:
-                    new_role = 'الموظف'
-                    permissions = 'المبيعات والمخزون'
-                    status = 'مرئي'
-                
-                db.execute('''
-                    INSERT INTO users_new (id, role, username, password_hash, permissions, status, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (user['id'], new_role, user['username'], user['password_hash'], 
-                      permissions, status, user.get('created_at', 'CURRENT_TIMESTAMP')))
-        
-        # Drop old table and rename new one
-        db.execute('DROP TABLE users')
-        db.execute('ALTER TABLE users_new RENAME TO users')
-        db.commit()
-        print("Users table recreated successfully!")
-    
-    # مستخدمين افتراضيين إذا لا يوجدون
+    """Initialize the database with schema and default data"""
+    db = get_db()
+    db.executescript(SCHEMA_SQL)
+
+    # ---- Default Users ----
     cur = db.execute('SELECT COUNT(*) as c FROM users')
     if cur.fetchone()['c'] == 0:
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('المدير', 'admin', generate_password_hash('admin123'), 'إدارة المستخدمين والمخزون والمبيعات', 'مرئي'))
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('الموظف', 'clerk', generate_password_hash('clerk123'), 'المبيعات والمخزون', 'مرئي'))
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('المطور', 'dev', generate_password_hash('dev'), 'جميع الصلاحيات', 'مخفي'))
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('المالك', 'owner', generate_password_hash('owner'), 'جميع الصلاحيات', 'مخفي'))
+        default_users = [
+            ('owner', 'owner', generate_password_hash('owner'), 'all_permissions', 'hidden'),
+            ('dev', 'dev', generate_password_hash('dev'), 'all_permissions', 'hidden'),
+            ('admin', 'admin', generate_password_hash('admin123'), 'manage_users_inventory_sales', 'visible'),
+            ('clerk', 'clerk', generate_password_hash('clerk123'), 'sales_inventory', 'visible')
+        ]
+        for role, username, pwd, perms, status in default_users:
+            db.execute(
+                'INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                (role, username, pwd, perms, status)
+            )
         db.commit()
-    
-    # التأكد من وجود مستخدم dev
-    dev_user = db.execute('SELECT * FROM users WHERE username = ?', ('dev',)).fetchone()
-    if not dev_user:
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('المطور', 'dev', generate_password_hash('dev'), 'جميع الصلاحيات', 'مخفي'))
-        db.commit()
-    else:
-        # تحديث دور المستخدم dev إذا كان موجود
-        db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE username = ?', 
-                   ('المطور', 'جميع الصلاحيات', 'مخفي', 'dev'))
-        db.commit()
-    
-    # التأكد من وجود مستخدم owner
-    owner_user = db.execute('SELECT * FROM users WHERE username = ?', ('owner',)).fetchone()
-    if not owner_user:
-        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
-                   ('المالك', 'owner', generate_password_hash('owner'), 'جميع الصلاحيات', 'مخفي'))
-        db.commit()
-    else:
-        # تحديث دور المستخدم owner إذا كان موجود
-        db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE username = ?', 
-                   ('المالك', 'جميع الصلاحيات', 'مخفي', 'owner'))
-        db.commit()
-    
-    # فئات افتراضية إذا لا توجد
+
+    # ---- Default Categories ----
     cur = db.execute('SELECT COUNT(*) as c FROM categories')
     if cur.fetchone()['c'] == 0:
         default_categories = [
-            ('إطارات', 'إطارات السيارات بأنواعها وأحجام مختلفة'),
-            ('زينة خارجية', 'زينة خارجية للسيارات - مرايا، مصدات، شعارات'),
-            ('زينة داخلية', 'زينة داخلية للسيارات - مقاعد، ستائر، أغطية'),
-            ('إضاءة', 'أنظمة الإضاءة للسيارات - لمبات، مصابيح LED'),
-            ('صوتيات', 'أنظمة الصوت والسماعات للسيارات'),
-            ('أدوات', 'أدوات وقطع غيار للسيارات'),
-            ('زيوت ومواد تشحيم', 'زيوت المحرك والفرامل والمواد المساعدة'),
-            ('بطاريات', 'بطاريات السيارات بأنواعها المختلفة'),
-            ('إطارات احتياطية', 'إطارات احتياطية وقطع غيار الإطارات'),
-            ('أجهزة إنذار', 'أنظمة الأمان والإنذار للسيارات'),
-            ('أكسسوارات هواتف', 'حاملات الهواتف وشواحن السيارات'),
-            ('منظفات ومواد العناية', 'منظفات السيارات ومواد العناية بها'),
-            ('قطع غيار محرك', 'قطع غيار المحرك والأنظمة الميكانيكية'),
-            ('قطع غيار فرامل', 'أنظمة الفرامل وقطع الغيار الخاصة بها'),
-            ('قطع غيار تعليق', 'أنظمة التعليق والمقاعد الهوائية')
+            ('Tires', 'Car tires of different types and sizes'),
+            ('Exterior Accessories', 'Car exterior accessories - mirrors, bumpers, logos'),
+            ('Interior Accessories', 'Car interior accessories - seats, curtains, covers'),
+            ('Lighting', 'Car lighting systems - bulbs, LED lamps'),
+            ('Audio Systems', 'Car audio and speaker systems'),
+            ('Tools', 'Car tools and spare parts'),
+            ('Oils and Lubricants', 'Engine oils, brake fluids, and lubricants'),
+            ('Batteries', 'Car batteries of all types'),
+            ('Spare Tires', 'Spare tires and related parts'),
+            ('Alarms', 'Car security and alarm systems'),
+            ('Phone Accessories', 'Phone holders and car chargers'),
+            ('Cleaners and Care', 'Car cleaning and care materials'),
+            ('Engine Parts', 'Engine spare parts and mechanical systems'),
+            ('Brake Parts', 'Brake systems and spare parts'),
+            ('Suspension Parts', 'Suspension systems and air seats')
         ]
         for name, desc in default_categories:
             db.execute('INSERT INTO categories (name, description) VALUES (?,?)', (name, desc))
@@ -325,15 +76,15 @@ def init_db():
 
 SCHEMA_SQL = r'''
 PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    role TEXT NOT NULL,                    -- الدور (المالك، المطور، المدير، الموظف)
-    username TEXT UNIQUE NOT NULL,         -- اسم المستخدم
-    password_hash TEXT NOT NULL,           -- كلمة المرور (مشفرة)
-    permissions TEXT NOT NULL,             -- الصلاحيات
-    status TEXT NOT NULL DEFAULT 'مرئي',   -- الحالة (مخفي / مرئي)
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
-);
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT NOT NULL,                    -- role (owner, dev, admin, clerk)
+        username TEXT UNIQUE NOT NULL,         -- username
+        password_hash TEXT NOT NULL,           -- encrypted password
+        permissions TEXT NOT NULL,             -- permissions
+        status TEXT NOT NULL DEFAULT 'visible',-- status (visible / hidden)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
 
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
