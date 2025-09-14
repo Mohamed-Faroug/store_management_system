@@ -15,7 +15,7 @@ bp = Blueprint('users', __name__)
 def list():
     """قائمة المستخدمين"""
     db = get_db()
-    users = db.execute('SELECT * FROM users WHERE username NOT IN (?, ?) ORDER BY created_at DESC', ('dev', 'owner')).fetchall()
+    users = db.execute('SELECT * FROM users WHERE status = ? ORDER BY created_at DESC', ('مرئي',)).fetchall()
     return render_template('users/list.html', users=users)
 
 @bp.route('/users/new', methods=['GET', 'POST'])
@@ -25,10 +25,11 @@ def new():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'clerk')
+        role = request.form.get('role', 'الموظف')
+        permissions = request.form.get('permissions', '').strip()
         
-        if not username or not password:
-            flash('اسم المستخدم وكلمة المرور مطلوبان', 'danger')
+        if not username or not password or not permissions:
+            flash('اسم المستخدم وكلمة المرور والصلاحيات مطلوبة', 'danger')
             return redirect(url_for('users.new'))
         
         if len(password) < 6:
@@ -38,9 +39,9 @@ def new():
         db = get_db()
         try:
             db.execute('''
-                INSERT INTO users (username, password_hash, role)
-                VALUES (?, ?, ?)
-            ''', (username, generate_password_hash(password), role))
+                INSERT INTO users (role, username, password_hash, permissions, status)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (role, username, generate_password_hash(password), permissions, 'مرئي'))
             db.commit()
             flash('تم إضافة المستخدم بنجاح', 'success')
             return redirect(url_for('users.list'))
@@ -60,17 +61,18 @@ def edit(user_id):
         flash('المستخدم غير موجود', 'danger')
         return redirect(url_for('users.list'))
     
-    if user['username'] in ['dev', 'owner']:
-        flash('لا يمكن تعديل مستخدمي dev و owner', 'danger')
+    if user['status'] == 'مخفي':
+        flash('لا يمكن تعديل المستخدمين المخفيين', 'danger')
         return redirect(url_for('users.list'))
     
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'clerk')
+        role = request.form.get('role', 'الموظف')
+        permissions = request.form.get('permissions', '').strip()
         
-        if not username:
-            flash('اسم المستخدم مطلوب', 'danger')
+        if not username or not permissions:
+            flash('اسم المستخدم والصلاحيات مطلوبة', 'danger')
             return redirect(url_for('users.edit', user_id=user_id))
         
         try:
@@ -80,15 +82,15 @@ def edit(user_id):
                     return redirect(url_for('users.edit', user_id=user_id))
                 db.execute('''
                     UPDATE users 
-                    SET username=?, password_hash=?, role=?
+                    SET username=?, password_hash=?, role=?, permissions=?
                     WHERE id=?
-                ''', (username, generate_password_hash(password), role, user_id))
+                ''', (username, generate_password_hash(password), role, permissions, user_id))
             else:
                 db.execute('''
                     UPDATE users 
-                    SET username=?, role=?
+                    SET username=?, role=?, permissions=?
                     WHERE id=?
-                ''', (username, role, user_id))
+                ''', (username, role, permissions, user_id))
             
             db.commit()
             flash('تم تحديث المستخدم بنجاح', 'success')
@@ -113,8 +115,8 @@ def delete(user_id):
         flash('لا يمكن حذف المستخدم الرئيسي', 'danger')
         return redirect(url_for('users.list'))
     
-    if user['username'] in ['dev', 'owner']:
-        flash('لا يمكن حذف مستخدمي dev و owner', 'danger')
+    if user['status'] == 'مخفي':
+        flash('لا يمكن حذف المستخدمين المخفيين', 'danger')
         return redirect(url_for('users.list'))
     
     try:

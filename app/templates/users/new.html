@@ -25,11 +25,16 @@
             <label class="form-label">الدور *</label>
             <select name="role" class="form-select" required>
               <option value="">اختر الدور</option>
-              <option value="manager">مدير</option>
-              <option value="clerk">كاشير</option>
-              <option value="owner">مالك</option>
+              <option value="المدير">مدير</option>
+              <option value="الموظف">موظف</option>
             </select>
             <div class="invalid-feedback">يرجى اختيار الدور</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">الصلاحيات *</label>
+            <input name="permissions" class="form-control" required placeholder="أدخل الصلاحيات">
+            <div class="invalid-feedback">يرجى إدخال الصلاحيات</div>
           </div>
           
           <div class="d-flex gap-2">

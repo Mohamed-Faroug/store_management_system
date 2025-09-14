@@ -177,39 +177,70 @@ def init_db():
                           (user['username'], invoice['id']))
         db.commit()
     
+    # Add new columns to users table if they don't exist
+    try:
+        db.execute('SELECT permissions FROM users LIMIT 1')
+    except sqlite3.OperationalError:
+        # Add new columns to users table
+        db.execute('ALTER TABLE users ADD COLUMN permissions TEXT')
+        db.execute('ALTER TABLE users ADD COLUMN status TEXT DEFAULT "مرئي"')
+        
+        # Update existing users with new structure
+        users = db.execute('SELECT id, username, role FROM users').fetchall()
+        for user in users:
+            if user['username'] == 'dev':
+                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
+                          ('المطور', 'جميع الصلاحيات', 'مخفي', user['id']))
+            elif user['username'] == 'owner':
+                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
+                          ('المالك', 'جميع الصلاحيات', 'مخفي', user['id']))
+            elif user['username'] == 'admin':
+                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
+                          ('المدير', 'إدارة المستخدمين والمخزون والمبيعات', 'مرئي', user['id']))
+            elif user['username'] == 'clerk':
+                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
+                          ('الموظف', 'المبيعات والمخزون', 'مرئي', user['id']))
+            else:
+                # For other users, set default values
+                db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE id = ?',
+                          ('الموظف', 'المبيعات والمخزون', 'مرئي', user['id']))
+        db.commit()
+    
     # مستخدمين افتراضيين إذا لا يوجدون
     cur = db.execute('SELECT COUNT(*) as c FROM users')
     if cur.fetchone()['c'] == 0:
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('admin', generate_password_hash('admin123'), 'manager'))
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('clerk', generate_password_hash('clerk123'), 'clerk'))
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('dev', generate_password_hash('dev'), 'dev'))
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('owner', generate_password_hash('owner'), 'owner'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('المدير', 'admin', generate_password_hash('admin123'), 'إدارة المستخدمين والمخزون والمبيعات', 'مرئي'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('الموظف', 'clerk', generate_password_hash('clerk123'), 'المبيعات والمخزون', 'مرئي'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('المطور', 'dev', generate_password_hash('dev'), 'جميع الصلاحيات', 'مخفي'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('المالك', 'owner', generate_password_hash('owner'), 'جميع الصلاحيات', 'مخفي'))
         db.commit()
     
     # التأكد من وجود مستخدم dev
     dev_user = db.execute('SELECT * FROM users WHERE username = ?', ('dev',)).fetchone()
     if not dev_user:
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('dev', generate_password_hash('dev'), 'dev'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('المطور', 'dev', generate_password_hash('dev'), 'جميع الصلاحيات', 'مخفي'))
         db.commit()
     else:
         # تحديث دور المستخدم dev إذا كان موجود
-        db.execute('UPDATE users SET role = ? WHERE username = ?', ('dev', 'dev'))
+        db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE username = ?', 
+                   ('المطور', 'جميع الصلاحيات', 'مخفي', 'dev'))
         db.commit()
     
     # التأكد من وجود مستخدم owner
     owner_user = db.execute('SELECT * FROM users WHERE username = ?', ('owner',)).fetchone()
     if not owner_user:
-        db.execute('INSERT INTO users (username, password_hash, role) VALUES (?,?,?)',
-                   ('owner', generate_password_hash('owner'), 'owner'))
+        db.execute('INSERT INTO users (role, username, password_hash, permissions, status) VALUES (?,?,?,?,?)',
+                   ('المالك', 'owner', generate_password_hash('owner'), 'جميع الصلاحيات', 'مخفي'))
         db.commit()
     else:
         # تحديث دور المستخدم owner إذا كان موجود
-        db.execute('UPDATE users SET role = ? WHERE username = ?', ('owner', 'owner'))
+        db.execute('UPDATE users SET role = ?, permissions = ?, status = ? WHERE username = ?', 
+                   ('المالك', 'جميع الصلاحيات', 'مخفي', 'owner'))
         db.commit()
     
     # فئات افتراضية إذا لا توجد
@@ -240,9 +271,11 @@ SCHEMA_SQL = r'''
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT CHECK(role IN ('manager','clerk','dev','owner')) NOT NULL DEFAULT 'clerk',
+    role TEXT NOT NULL,                    -- الدور (المالك، المطور، المدير، الموظف)
+    username TEXT UNIQUE NOT NULL,         -- اسم المستخدم
+    password_hash TEXT NOT NULL,           -- كلمة المرور (مشفرة)
+    permissions TEXT NOT NULL,             -- الصلاحيات
+    status TEXT NOT NULL DEFAULT 'مرئي',   -- الحالة (مخفي / مرئي)
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -11,12 +11,24 @@ def check_user_permissions(username, required_role):
     """التحقق من صلاحيات المستخدم من قاعدة البيانات"""
     try:
         db = get_db()
-        user = db.execute('SELECT role FROM users WHERE username = ?', (username,)).fetchone()
+        user = db.execute('SELECT role, permissions FROM users WHERE username = ?', (username,)).fetchone()
         if user:
-            return user['role'] == required_role
+            # Check if user has the required role or has "جميع الصلاحيات"
+            return user['role'] == required_role or user['permissions'] == 'جميع الصلاحيات'
         return False
     except:
         return False
+
+def check_user_status(username):
+    """التحقق من حالة المستخدم (مخفي/مرئي)"""
+    try:
+        db = get_db()
+        user = db.execute('SELECT status FROM users WHERE username = ?', (username,)).fetchone()
+        if user:
+            return user['status']
+        return 'مرئي'
+    except:
+        return 'مرئي'
 
 def login_required(role=None):
     """مطلوب تسجيل الدخول مع اختياري للدور"""
@@ -48,7 +60,7 @@ def manager_required(f):
     return wrapper
 
 def dev_user_required(f):
-    """مطلوب دور dev للوصول"""
+    """مطلوب دور المطور للوصول"""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
@@ -59,16 +71,18 @@ def dev_user_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        # التحقق من أن المستخدم هو dev أو له دور dev
-        if username == 'dev' or role == 'dev' or check_user_permissions(username, 'dev'):
+        # التحقق من أن المستخدم هو dev أو له دور المطور أو جميع الصلاحيات
+        if (username == 'dev' or role == 'المطور' or 
+            check_user_permissions(username, 'المطور') or 
+            check_user_permissions(username, 'جميع الصلاحيات')):
             return f(*args, **kwargs)
         else:
-            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدم dev فقط.', 'danger')
+            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة للمطور فقط.', 'danger')
             return redirect(url_for('main.index'))
     return wrapper
 
 def owner_user_required(f):
-    """مطلوب دور owner للوصول"""
+    """مطلوب دور المالك للوصول"""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
@@ -79,16 +93,18 @@ def owner_user_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        # التحقق من أن المستخدم هو owner أو له دور owner
-        if username == 'owner' or role == 'owner' or check_user_permissions(username, 'owner'):
+        # التحقق من أن المستخدم هو owner أو له دور المالك أو جميع الصلاحيات
+        if (username == 'owner' or role == 'المالك' or 
+            check_user_permissions(username, 'المالك') or 
+            check_user_permissions(username, 'جميع الصلاحيات')):
             return f(*args, **kwargs)
         else:
-            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدم owner فقط.', 'danger')
+            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة للمالك فقط.', 'danger')
             return redirect(url_for('main.index'))
     return wrapper
 
 def dev_or_owner_required(f):
-    """مطلوب دور dev أو owner للوصول"""
+    """مطلوب دور المطور أو المالك للوصول"""
     @wraps(f)
     def wrapper(*args, **kwargs):
         if 'user_id' not in session:
@@ -99,11 +115,13 @@ def dev_or_owner_required(f):
         username = session.get('username')
         role = session.get('role')
         
-        # التحقق من أن المستخدم هو dev أو owner أو له دور dev أو owner
-        if (username in ['dev', 'owner'] or role in ['dev', 'owner'] or 
-            check_user_permissions(username, 'dev') or check_user_permissions(username, 'owner')):
+        # التحقق من أن المستخدم هو dev أو owner أو له دور المطور أو المالك أو جميع الصلاحيات
+        if (username in ['dev', 'owner'] or role in ['المطور', 'المالك'] or 
+            check_user_permissions(username, 'المطور') or 
+            check_user_permissions(username, 'المالك') or 
+            check_user_permissions(username, 'جميع الصلاحيات')):
             return f(*args, **kwargs)
         else:
-            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة لمستخدمي dev و owner فقط.', 'danger')
+            flash('لا تملك صلاحية الوصول. هذه الصفحة متاحة للمطور والمالك فقط.', 'danger')
             return redirect(url_for('main.index'))
     return wrapper
