@@ -47,7 +47,7 @@ Flask-Migrate==4.0.5
 
 # Utilities
 click==8.1.7
-itsdangerous==2.1.2
+itsdangerous==2.2.0
 blinker==1.6.2
 
 # Production Server
