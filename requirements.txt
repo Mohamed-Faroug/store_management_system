@@ -27,7 +27,7 @@ python-dotenv==1.0.0
 Flask-CORS==4.0.0
 
 # Session Management
-Flask-Session==0.5.0
+Flask-Session==0.8.0
 
 # Form Handling
 WTForms==3.0.1
